@@ -12,6 +12,27 @@ import com.google.gson.stream.JsonReader;
 public class UDPServer {
 	
 	private ArrayList<Cliente> clientes = new ArrayList<Cliente>();
+	private ArrayList<Anime> animes = new ArrayList<Anime>();
+	
+	private void avaliarAnime(Message msg) 
+	{
+		String dummy = msg.getContent();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(dummy));
+		reader.setLenient(true);
+		MessageScore dummy2 = gson.fromJson(reader, MessageScore.class);
+		
+		for (Anime e : animes) 
+		{
+			if(e.getName().contentEquals(dummy2.getName())) 
+			{
+				e.addScore(dummy2.getScore());
+				System.out.println("O anime " + e.getName() + " está com a média " + e.getMScore());
+				break;
+			}
+		}
+	}
 	
 	private void cadastrarUsuario(Message msg) 
 	{
@@ -38,7 +59,7 @@ public class UDPServer {
 		Gson gson = new Gson();
 		JsonReader reader = new JsonReader(new StringReader(dummy));
 		reader.setLenient(true);
-		MessageCadastro dummy2 = gson.fromJson(reader, MessageCadastro.class);
+		MessageLogin dummy2 = gson.fromJson(reader, MessageLogin.class);
 		
 		Cliente temp = new Cliente();
 		
@@ -50,6 +71,30 @@ public class UDPServer {
 			{
 				System.out.print("Usuário " + temp.getUsername() + " logado no sistema");
 			}
+		}
+	}
+	
+	private void cadastrarAnime(Message msg) 
+	{
+		String dummy = msg.getContent();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(dummy));
+		reader.setLenient(true);
+		MessageAnime dummy2 = gson.fromJson(reader, MessageAnime.class);
+		
+		Anime anm = new Anime();
+		
+		anm.setName(dummy2.getName());
+		anm.setEpisodes(dummy2.getEpisodes());
+		anm.setSummmary(dummy2.getSummary());
+		
+		animes.add(anm);
+		
+		System.out.println("Animes cadastrados: ");
+		for (Anime e : animes) 
+		{
+			System.out.println("---- "+e.getName());
 		}
 	}
 	
@@ -81,6 +126,12 @@ public class UDPServer {
 							break;
 						case 2:
 							consultarUsuario(msg);
+							break;
+						case 3:
+							cadastrarAnime(msg);
+							break;
+						case 4:
+							avaliarAnime(msg);
 							break;
 					}
 				}

@@ -53,6 +53,29 @@ class UDPClient {
 
 						msg.setContent(gson.toJson(login, MessageLogin.class));
 						break;
+					case "3":
+						msg.setType(3);
+						MessageAnime anime = new MessageAnime();
+						System.out.println("Enter the anime name: ");
+						anime.setName(scanner.nextLine());
+						System.out.println("Enter the quantity of episodes: ");
+						anime.setEpisodes(Integer.parseInt(scanner.nextLine()));
+						System.out.println("Enter a brief summary of the anime");
+						anime.setSummary(scanner.nextLine());
+						
+
+						msg.setContent(gson.toJson(anime, MessageAnime.class));
+						break;
+					case "4":
+						msg.setType(4);
+						MessageScore score = new MessageScore();
+						System.out.println("Enter the anime name: ");
+						score.setName(scanner.nextLine());
+						System.out.println("Enter the score that you want to give: ");
+						score.setScore(Double.parseDouble(scanner.nextLine()));
+						
+						msg.setContent(gson.toJson(score, MessageScore.class));
+						break;
 					default:
 						msg = null;
 				}
@@ -63,6 +86,8 @@ class UDPClient {
 				
 				String dummy = gson.toJson(msg);
 				// JSON END
+				
+				//System.out.println(dummy);
 				
 				sendMessage = dummy.getBytes();
 				DatagramPacket sendPacket = new DatagramPacket(
