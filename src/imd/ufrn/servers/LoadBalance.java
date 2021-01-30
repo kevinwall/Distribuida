@@ -12,18 +12,31 @@ import java.util.ArrayList;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
+import imd.ufrn.model.LoadAux;
 import imd.ufrn.model.Message;
 
 public class LoadBalance 
 {
-	private ArrayList<Integer> portsClientes = new ArrayList<Integer>();
-	private ArrayList<Integer> portsAnimes = new ArrayList<Integer>();
+	private ArrayList<LoadAux> portsClientes = new ArrayList<LoadAux>();
+	private ArrayList<LoadAux> portsAnimes = new ArrayList<LoadAux>();
 	
 	public LoadBalance() {
-		portsClientes.add(9040);
-		portsClientes.add(9041);
-		portsAnimes.add(9030);
-		portsAnimes.add(9031);
+		LoadAux cliente1 = new LoadAux();
+		cliente1.setLoad(0);
+		cliente1.setPort(9040);
+		LoadAux cliente2 = new LoadAux();
+		cliente2.setLoad(0);
+		cliente2.setPort(9041);
+		LoadAux cliente3 = new LoadAux();
+		cliente3.setLoad(0);
+		cliente3.setPort(9030);
+		LoadAux cliente4 = new LoadAux();
+		cliente4.setLoad(0);
+		cliente4.setPort(9031);
+		portsClientes.add(cliente1);
+		portsClientes.add(cliente2);
+		portsAnimes.add(cliente3);
+		portsAnimes.add(cliente4);
 		System.out.println("Load Balance Started");
 		try {
 			DatagramSocket serverSocket = new DatagramSocket(9010);
@@ -78,9 +91,9 @@ public class LoadBalance
 			InetAddress inetAddress = InetAddress.getByName("localhost");
 			byte[] sendMessage;
 			
-			for (Integer i : portsClientes) 
+			for (LoadAux i : portsClientes) 
 			{
-				if(i != clientPort) 
+				if(i.getPort() != clientPort) 
 				{
 					System.out.println("Entrei no if");
 					try {
@@ -95,7 +108,7 @@ public class LoadBalance
 						sendMessage = gson.toJson(msg).getBytes();
 						DatagramPacket sendPacket = new DatagramPacket(
 								sendMessage, sendMessage.length,
-								inetAddress, i);
+								inetAddress, i.getPort());
 						
 						sincronizeSendSocket.send(sendPacket);
 							
@@ -121,9 +134,9 @@ public class LoadBalance
 			InetAddress inetAddress = InetAddress.getByName("localhost");
 			byte[] sendMessage;
 			
-			for (Integer i : portsAnimes) 
+			for (LoadAux i : portsAnimes) 
 			{
-				if(i != clientPort) 
+				if(i.getPort() != clientPort) 
 				{
 					System.out.println("Entrei no if");
 					try {
@@ -138,7 +151,7 @@ public class LoadBalance
 						sendMessage = gson.toJson(msg).getBytes();
 						DatagramPacket sendPacket = new DatagramPacket(
 								sendMessage, sendMessage.length,
-								inetAddress, i);
+								inetAddress, i.getPort());
 						
 						sincronizeSendSocket.send(sendPacket);
 							
@@ -167,7 +180,22 @@ public class LoadBalance
 			byte[] sendMessage;
 			
 			boolean flag = false;
-			for (Integer i : portsClientes) 
+			
+			portsClientes.sort((LoadAux rhs, LoadAux lhs) ->
+			{
+				if(rhs.getLoad() < lhs.getLoad()) 
+				{
+					return -1;
+				}else if(rhs.getLoad() == lhs.getLoad()) 
+				{
+					return 0;
+				}
+				
+				return 1;
+			}
+					);
+			
+			for (LoadAux i : portsClientes) 
 			{
 				try {
 					System.out.println("Porta do cliente: " + clientPort);
@@ -175,7 +203,9 @@ public class LoadBalance
 					sendMessage = message.getBytes();
 					DatagramPacket sendPacket = new DatagramPacket(
 							sendMessage, sendMessage.length,
-							inetAddress, i);
+							inetAddress, i.getPort());
+					
+					i.setLoad(i.getLoad() + 1);
 					
 					redirectSendSocket.send(sendPacket);
 					
@@ -200,7 +230,7 @@ public class LoadBalance
 						switch(msg.getType()) 
 						{
 							case 5:
-								sincronizeClient(receivePacket, i);
+								sincronizeClient(receivePacket, i.getPort());
 								System.out.println("Cadastro realizado com sucesso");
 								flag = true;
 								break;
@@ -239,7 +269,22 @@ public class LoadBalance
 			byte[] sendMessage;
 			
 			boolean flag = false;
-			for (Integer i : portsAnimes) 
+			
+			portsAnimes.sort((LoadAux rhs, LoadAux lhs) ->
+			{
+				if(rhs.getLoad() < lhs.getLoad()) 
+				{
+					return -1;
+				}else if(rhs.getLoad() == lhs.getLoad()) 
+				{
+					return 0;
+				}
+				
+				return 1;
+			}
+					);
+			
+			for (LoadAux i : portsAnimes) 
 			{
 				try {
 					//System.out.println("Porta do cliente: " + clientPort);
@@ -247,7 +292,9 @@ public class LoadBalance
 					sendMessage = message.getBytes();
 					DatagramPacket sendPacket = new DatagramPacket(
 							sendMessage, sendMessage.length,
-							inetAddress, i);
+							inetAddress, i.getPort());
+					
+					i.setLoad(i.getLoad() + 1);
 					
 					redirectSendSocket.send(sendPacket);
 					
@@ -272,7 +319,7 @@ public class LoadBalance
 						switch(msg.getType()) 
 						{
 							case 7:
-								sincronizeAnime(receivePacket, i);
+								sincronizeAnime(receivePacket, i.getPort());
 								System.out.println("Cadastro realizado com sucesso");
 								flag = true;
 								break;
