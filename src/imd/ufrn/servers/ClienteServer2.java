@@ -15,14 +15,14 @@ import imd.ufrn.model.Message;
 import imd.ufrn.model.MessageCadastro;
 import imd.ufrn.model.MessageLogin;
 
-public class ClienteServer 
+public class ClienteServer2 
 {
 	private ArrayList<Cliente> clientes = new ArrayList<Cliente>();
 	
-	public ClienteServer() {
+	public ClienteServer2() {
 		System.out.println("Client Server Started");
 		try {
-			DatagramSocket serverSocket = new DatagramSocket(9040);
+			DatagramSocket serverSocket = new DatagramSocket(9041);
 			while (true) {
 				byte[] receiveMessage = new byte[1024];
 				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
@@ -89,8 +89,6 @@ public class ClienteServer
 			Message feedback = new Message();
 			feedback.setType(5);
 			
-			System.out.println("Enviando feedback para: " + receivePacket.getPort());
-			
 			byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
 			DatagramPacket sendPacket = new DatagramPacket(
 					sendMessage, sendMessage.length,
@@ -128,6 +126,6 @@ public class ClienteServer
 	}
 	
 	public static void main(String[] args) { 
-		new ClienteServer();    
+		new ClienteServer2();    
 	}
 }

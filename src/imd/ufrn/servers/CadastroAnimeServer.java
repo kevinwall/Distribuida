@@ -41,7 +41,7 @@ public class CadastroAnimeServer
 	public CadastroAnimeServer() {
 		System.out.println("Cadastro de anime server started");
 		try {
-			DatagramSocket serverSocket = new DatagramSocket(9004);
+			DatagramSocket serverSocket = new DatagramSocket(9030);
 			while (true) {
 				byte[] receiveMessage = new byte[1024];
 				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);

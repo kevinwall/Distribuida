@@ -23,7 +23,7 @@ class UDPClient {
 			DatagramSocket clientSocket = new DatagramSocket();
 			InetAddress inetAddress = InetAddress.getByName("localhost");
 			byte[] sendMessage;
-			int port;
+			int port = 9010;
 			while (true) {
 				System.out.println("Enter the message type: ");
 				String type = scanner.nextLine();
@@ -47,7 +47,7 @@ class UDPClient {
 						//System.out.println("Username: " +password);
 						
 						msg.setContent(gson.toJson(cadastro, MessageCadastro.class));
-						port = 9003;
+						//port = 9003;
 						break;
 					case "2":
 						msg.setType(2);
@@ -59,7 +59,7 @@ class UDPClient {
 						
 
 						msg.setContent(gson.toJson(login, MessageLogin.class));
-						port = 9003;
+						//port = 9003;
 						break;
 					case "3":
 						msg.setType(3);
@@ -73,7 +73,7 @@ class UDPClient {
 						
 
 						msg.setContent(gson.toJson(anime, MessageAnime.class));
-						port = 9004;
+						//port = 9004;
 						break;
 					case "4":
 						msg.setType(4);
@@ -84,7 +84,7 @@ class UDPClient {
 						score.setScore(Double.parseDouble(scanner.nextLine()));
 						
 						msg.setContent(gson.toJson(score, MessageScore.class));
-						port = 9004;
+						//port = 9004;
 						break;
 					default:
 						msg = null;
