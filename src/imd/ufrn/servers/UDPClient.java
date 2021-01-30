@@ -1,4 +1,4 @@
-package imd.ufrn;
+package imd.ufrn.servers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -7,6 +7,12 @@ import java.net.InetAddress;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
+
+import imd.ufrn.model.Message;
+import imd.ufrn.model.MessageAnime;
+import imd.ufrn.model.MessageCadastro;
+import imd.ufrn.model.MessageLogin;
+import imd.ufrn.model.MessageScore;
 
 class UDPClient {
 
@@ -17,6 +23,7 @@ class UDPClient {
 			DatagramSocket clientSocket = new DatagramSocket();
 			InetAddress inetAddress = InetAddress.getByName("localhost");
 			byte[] sendMessage;
+			int port;
 			while (true) {
 				System.out.println("Enter the message type: ");
 				String type = scanner.nextLine();
@@ -40,7 +47,7 @@ class UDPClient {
 						//System.out.println("Username: " +password);
 						
 						msg.setContent(gson.toJson(cadastro, MessageCadastro.class));
-						
+						port = 9003;
 						break;
 					case "2":
 						msg.setType(2);
@@ -52,6 +59,7 @@ class UDPClient {
 						
 
 						msg.setContent(gson.toJson(login, MessageLogin.class));
+						port = 9003;
 						break;
 					case "3":
 						msg.setType(3);
@@ -65,6 +73,7 @@ class UDPClient {
 						
 
 						msg.setContent(gson.toJson(anime, MessageAnime.class));
+						port = 9004;
 						break;
 					case "4":
 						msg.setType(4);
@@ -75,9 +84,11 @@ class UDPClient {
 						score.setScore(Double.parseDouble(scanner.nextLine()));
 						
 						msg.setContent(gson.toJson(score, MessageScore.class));
+						port = 9004;
 						break;
 					default:
 						msg = null;
+						port = 9000;
 				}
 					
 						
@@ -92,12 +103,14 @@ class UDPClient {
 				sendMessage = dummy.getBytes();
 				DatagramPacket sendPacket = new DatagramPacket(
 						sendMessage, sendMessage.length,
-						inetAddress, 9003);
+						inetAddress, port);
 				clientSocket.send(sendPacket);
 			}
 			scanner.close();
 			clientSocket.close();
-		} catch (IOException ex) {
+		} catch (IOException ex) 
+		{
+			
 		}
 		System.out.println("UDP Client Terminating ");
 	}

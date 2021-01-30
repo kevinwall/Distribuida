@@ -1,4 +1,4 @@
-package imd.ufrn;
+package imd.ufrn.model;
 
 public class MessageScore 
 {

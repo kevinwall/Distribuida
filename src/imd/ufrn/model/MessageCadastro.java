@@ -1,6 +1,6 @@
-package imd.ufrn;
+package imd.ufrn.model;
 
-public class MessageLogin
+public class MessageCadastro
 {
 	private String usuario;
 	private String senha;

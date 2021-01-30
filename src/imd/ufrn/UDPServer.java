@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
+import imd.ufrn.model.Anime;
+import imd.ufrn.model.Cliente;
+import imd.ufrn.model.Message;
+import imd.ufrn.model.MessageAnime;
+import imd.ufrn.model.MessageCadastro;
+import imd.ufrn.model.MessageLogin;
+import imd.ufrn.model.MessageScore;
+
 public class UDPServer {
 	
 	private ArrayList<Cliente> clientes = new ArrayList<Cliente>();

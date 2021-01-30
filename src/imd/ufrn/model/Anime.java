@@ -1,4 +1,4 @@
-package imd.ufrn;
+package imd.ufrn.model;
 
 import java.util.ArrayList;
 
