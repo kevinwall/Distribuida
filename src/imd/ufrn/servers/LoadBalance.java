@@ -70,6 +70,49 @@ public class LoadBalance
 		}
 	}
 	
+	private void sincronizeClient(DatagramPacket message, int clientPort) 
+	{
+		try {
+			DatagramSocket sincronizeSendSocket = new DatagramSocket();
+			InetAddress inetAddress = InetAddress.getByName("localhost");
+			byte[] sendMessage;
+			
+			for (Integer i : portsClientes) 
+			{
+				if(i != clientPort) 
+				{
+					System.out.println("Entrei no if");
+					try {
+						String returnMessage = new String(message.getData());
+						
+						Gson gson = new Gson();
+						JsonReader reader = new JsonReader(new StringReader(returnMessage));
+						reader.setLenient(true);
+						Message msg = gson.fromJson(reader, Message.class);
+						msg.setType(9);
+						
+						sendMessage = gson.toJson(msg).getBytes();
+						DatagramPacket sendPacket = new DatagramPacket(
+								sendMessage, sendMessage.length,
+								inetAddress, i);
+						
+						sincronizeSendSocket.send(sendPacket);
+							
+					}catch(IOException e) 
+					{
+						System.out.println("Failed to send the message");
+					}
+				}	
+			}
+			
+			//redirectReciveSocket.close();
+			sincronizeSendSocket.close();
+		}catch(IOException e) 
+		{
+			System.out.println("Failed to connect");
+		}
+	}
+	
 	private void redirectCliente(String message, int clientPort) 
 	{
 		try {
@@ -113,6 +156,7 @@ public class LoadBalance
 						switch(msg.getType()) 
 						{
 							case 5:
+								sincronizeClient(receivePacket, i);
 								System.out.println("Cadastro realizado com sucesso");
 								flag = true;
 								break;

@@ -14,6 +14,7 @@ import imd.ufrn.model.Cliente;
 import imd.ufrn.model.Message;
 import imd.ufrn.model.MessageCadastro;
 import imd.ufrn.model.MessageLogin;
+import imd.ufrn.model.MessageSyncClient;
 
 public class ClienteServer2 
 {
@@ -48,6 +49,8 @@ public class ClienteServer2
 						case 2:
 							consultarUsuario(msg);
 							break;
+						case 9:
+							sincronize(msg);
 					}
 				}
 				else 
@@ -61,6 +64,26 @@ public class ClienteServer2
 		}catch (IOException e) {
 				e.printStackTrace();
 				System.out.println("UDP Server Terminating");		
+		}
+	}
+	
+	private void sincronize(Message msg) 
+	{
+		System.out.println("Entrei no sincronize");
+		String dummy = msg.getContent();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(dummy));
+		reader.setLenient(true);
+		
+		MessageSyncClient dummy2 = gson.fromJson(reader, MessageSyncClient.class);
+		
+		clientes = dummy2.getClients();
+		
+		System.out.println("Clientes cadastrados: ");
+		for (Cliente e : clientes) 
+		{
+			System.out.println(e.getUsername());
 		}
 	}
 	
@@ -87,7 +110,13 @@ public class ClienteServer2
 			DatagramSocket feedbackSocket = new DatagramSocket();
 			
 			Message feedback = new Message();
+			MessageSyncClient syncList = new MessageSyncClient();
+			syncList.setClients(clientes);
+			
 			feedback.setType(5);
+			feedback.setContent(gson.toJson(syncList, MessageSyncClient.class));
+			
+			System.out.println("Enviando feedback para: " + receivePacket.getPort());
 			
 			byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
 			DatagramPacket sendPacket = new DatagramPacket(
