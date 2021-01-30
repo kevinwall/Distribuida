@@ -22,7 +22,8 @@ public class LoadBalance
 	public LoadBalance() {
 		portsClientes.add(9040);
 		portsClientes.add(9041);
-		portsAnimes.add(9004);
+		portsAnimes.add(9030);
+		portsAnimes.add(9031);
 		System.out.println("Load Balance Started");
 		try {
 			DatagramSocket serverSocket = new DatagramSocket(9010);
@@ -113,6 +114,49 @@ public class LoadBalance
 		}
 	}
 	
+	private void sincronizeAnime(DatagramPacket message, int clientPort) 
+	{
+		try {
+			DatagramSocket sincronizeSendSocket = new DatagramSocket();
+			InetAddress inetAddress = InetAddress.getByName("localhost");
+			byte[] sendMessage;
+			
+			for (Integer i : portsAnimes) 
+			{
+				if(i != clientPort) 
+				{
+					System.out.println("Entrei no if");
+					try {
+						String returnMessage = new String(message.getData());
+						
+						Gson gson = new Gson();
+						JsonReader reader = new JsonReader(new StringReader(returnMessage));
+						reader.setLenient(true);
+						Message msg = gson.fromJson(reader, Message.class);
+						msg.setType(10);
+						
+						sendMessage = gson.toJson(msg).getBytes();
+						DatagramPacket sendPacket = new DatagramPacket(
+								sendMessage, sendMessage.length,
+								inetAddress, i);
+						
+						sincronizeSendSocket.send(sendPacket);
+							
+					}catch(IOException e) 
+					{
+						System.out.println("Failed to send the message");
+					}
+				}	
+			}
+			
+			//redirectReciveSocket.close();
+			sincronizeSendSocket.close();
+		}catch(IOException e) 
+		{
+			System.out.println("Failed to connect");
+		}
+	}
+	
 	private void redirectCliente(String message, int clientPort) 
 	{
 		try {
@@ -161,18 +205,8 @@ public class LoadBalance
 								flag = true;
 								break;
 							case 6:
-								// Redirecting the token to the client
 								redirectSendSocket.send(receivePacket);
 								flag = true;
-								//DatagramSocket responseTokenSocket = new DatagramSocket();
-								
-								//byte[] responseClientMessage = returnMessage.getBytes();
-								//DatagramPacket responseClientPacket = new DatagramPacket(responseClientMessage, 
-								//		responseClientMessage.length,
-								//		receivePacket.getAddress(), receivePacket.getPort());
-								
-								//responseTokenSocket.send(responseClientPacket);
-								//responseTokenSocket.close();
 								break;
 						}
 					}	
@@ -197,7 +231,74 @@ public class LoadBalance
 	
 	private void redirectAnime(String message) 
 	{
-		
+		try {
+			DatagramSocket redirectSendSocket = new DatagramSocket();
+			//DatagramSocket redirectReciveSocket = new DatagramSocket();
+			//redirectReciveSocket.setSoTimeout(4000);
+			InetAddress inetAddress = InetAddress.getByName("localhost");
+			byte[] sendMessage;
+			
+			boolean flag = false;
+			for (Integer i : portsAnimes) 
+			{
+				try {
+					//System.out.println("Porta do cliente: " + clientPort);
+					// Sending packet
+					sendMessage = message.getBytes();
+					DatagramPacket sendPacket = new DatagramPacket(
+							sendMessage, sendMessage.length,
+							inetAddress, i);
+					
+					redirectSendSocket.send(sendPacket);
+					
+					//Waiting for response
+					byte[] receiveMessage = new byte[1024];
+					DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+					redirectSendSocket.setSoTimeout(4000);
+					redirectSendSocket.receive(receivePacket);
+					
+					String returnMessage = new String(receivePacket.getData());
+					
+					System.out.println("Mensagem de feedback recebida: " + returnMessage);
+					
+					// JSON Update
+					Gson gson = new Gson();
+					JsonReader reader = new JsonReader(new StringReader(returnMessage));
+					reader.setLenient(true);
+					Message msg = gson.fromJson(reader, Message.class);
+					
+					if(msg != null) 
+					{
+						switch(msg.getType()) 
+						{
+							case 7:
+								sincronizeAnime(receivePacket, i);
+								System.out.println("Cadastro realizado com sucesso");
+								flag = true;
+								break;
+							case 8:
+								redirectSendSocket.send(receivePacket);
+								flag = true;
+								break;
+						}
+					}	
+				if(flag) 
+				{
+					break;
+				}
+				}catch(SocketTimeoutException e) 
+				{
+					System.out.println("Trying another server...");
+					continue;
+				}
+			}
+			
+			//redirectReciveSocket.close();
+			redirectSendSocket.close();
+		}catch(IOException e) 
+		{
+			System.out.println("Failed to connect");
+		}
 	}
 	
 	public static void main(String[] args) { 

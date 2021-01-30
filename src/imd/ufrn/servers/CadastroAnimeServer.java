@@ -10,9 +10,12 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import imd.ufrn.model.Anime;
+import imd.ufrn.model.Cliente;
 import imd.ufrn.model.Message;
 import imd.ufrn.model.MessageAnime;
 import imd.ufrn.model.MessageScore;
+import imd.ufrn.model.MessageSyncAnime;
+import imd.ufrn.model.MessageSyncClient;
 
 public class CadastroAnimeServer 
 {
@@ -62,10 +65,13 @@ public class CadastroAnimeServer
 					switch(type) 
 					{
 						case 3:
-							cadastrarAnime(msg);
+							cadastrarAnime(msg, receivePacket);
 							break;
 						case 4:
 							avaliarAnime(msg);
+							break;
+						case 10:
+							sincronize(msg);
 							break;
 					}
 				}
@@ -83,7 +89,26 @@ public class CadastroAnimeServer
 		}
 	}
 	
-	private void cadastrarAnime(Message msg) 
+	private void sincronize(Message msg) 
+	{
+		String dummy = msg.getContent();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(dummy));
+		reader.setLenient(true);
+		
+		MessageSyncAnime dummy2 = gson.fromJson(reader, MessageSyncAnime.class);
+		
+		animes = dummy2.getAnimes();
+		
+		System.out.println("Animes cadastrados: ");
+		for (Anime e : animes) 
+		{
+			System.out.println(e.getName());
+		}
+	}
+	
+	private void cadastrarAnime(Message msg, DatagramPacket receivePacket) 
 	{
 		String dummy = msg.getContent();
 		
@@ -100,10 +125,28 @@ public class CadastroAnimeServer
 		
 		animes.add(anm);
 		
-		System.out.println("Animes cadastrados: ");
-		for (Anime e : animes) 
+		try {
+			DatagramSocket feedbackSocket = new DatagramSocket();
+			
+			Message feedback = new Message();
+			MessageSyncAnime syncList = new MessageSyncAnime();
+			syncList.setAnimes(animes);
+			
+			feedback.setType(7);
+			feedback.setContent(gson.toJson(syncList, MessageSyncAnime.class));
+			
+			System.out.println("Enviando feedback para: " + receivePacket.getPort());
+			
+			byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+			DatagramPacket sendPacket = new DatagramPacket(
+					sendMessage, sendMessage.length,
+					receivePacket.getAddress(), receivePacket.getPort());
+			feedbackSocket.send(sendPacket);
+			
+			feedbackSocket.close();
+		}catch(IOException e) 
 		{
-			System.out.println("---- "+e.getName());
+			System.out.print("Erro no envio do feedback");
 		}
 	}
 	
