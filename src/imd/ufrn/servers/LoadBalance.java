@@ -37,6 +37,7 @@ public class LoadBalance
 		portsClientes.add(cliente2);
 		portsAnimes.add(cliente3);
 		portsAnimes.add(cliente4);
+		
 		System.out.println("Load Balance Started");
 		try {
 			DatagramSocket serverSocket = new DatagramSocket(9010);
@@ -235,7 +236,13 @@ public class LoadBalance
 								flag = true;
 								break;
 							case 6:
-								redirectSendSocket.send(receivePacket);
+								sincronizeClient(receivePacket, i.getPort());
+								byte[] tokenMessage;
+								tokenMessage = returnMessage.getBytes();
+								DatagramPacket tokenPacket = new DatagramPacket(
+										tokenMessage, tokenMessage.length,
+										inetAddress, clientPort);
+								redirectSendSocket.send(tokenPacket);
 								flag = true;
 								break;
 						}
@@ -318,10 +325,25 @@ public class LoadBalance
 					{
 						switch(msg.getType()) 
 						{
-							case 7:
-								sincronizeAnime(receivePacket, i.getPort());
-								System.out.println("Cadastro realizado com sucesso");
-								flag = true;
+							case 11:
+								autorizeToken(receivePacket);
+								byte[] sincMsg = new byte[1024];
+								DatagramPacket sincPacket = new DatagramPacket(sincMsg, sincMsg.length);
+								redirectSendSocket.setSoTimeout(500);
+								redirectSendSocket.receive(sincPacket);
+								JsonReader sincReader = new JsonReader(new StringReader(new String(sincPacket.getData())));
+								sincReader.setLenient(true);
+								Message sincAnimeMsg = gson.fromJson(sincReader, Message.class);
+								if(sincAnimeMsg.getType() == 7) 
+								{
+									sincronizeAnime(sincPacket, i.getPort());
+									System.out.println("Cadastro realizado com sucesso");
+									flag = true;
+								}else if(sincAnimeMsg.getType() == 13)
+								{
+									System.out.println("O usuário não está logado");
+									flag = true;
+								}
 								break;
 							case 8:
 								redirectSendSocket.send(receivePacket);
@@ -345,6 +367,66 @@ public class LoadBalance
 		}catch(IOException e) 
 		{
 			System.out.println("Failed to connect");
+		}
+	}
+	
+	private void autorizeToken(DatagramPacket message) 
+	{
+		portsClientes.sort((LoadAux rhs, LoadAux lhs) ->
+		{
+			if(rhs.getLoad() < lhs.getLoad()) 
+			{
+				return -1;
+			}else if(rhs.getLoad() == lhs.getLoad()) 
+			{
+				return 0;
+			}
+			
+			return 1;
+		}
+				);
+		
+		String temp = new String(message.getData());
+		
+		for (LoadAux e : portsClientes) 
+		{
+			try {
+				DatagramSocket redirectSendSocket = new DatagramSocket();
+				InetAddress inetAddress = InetAddress.getByName("localhost");
+				byte[] sendMessage;
+				
+				sendMessage = temp.getBytes();
+				
+				DatagramPacket sendPacket = new DatagramPacket(
+						sendMessage, sendMessage.length,
+						inetAddress, e.getPort());
+				
+				redirectSendSocket.send(sendPacket);
+				
+				redirectSendSocket.setSoTimeout(2000);
+				
+				byte[] receiveMessage = new byte[1024];
+				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+				
+				redirectSendSocket.receive(receivePacket);
+				
+				byte[] lastFeedback = new String(receivePacket.getData()).getBytes();
+				DatagramPacket lastPacket = new DatagramPacket(
+						lastFeedback, lastFeedback.length,
+						message.getAddress(), message.getPort());
+				
+				redirectSendSocket.send(lastPacket);
+				
+				redirectSendSocket.close();
+				break;
+			}catch(SocketTimeoutException ex) 
+			{
+				continue;
+			}catch(IOException ex2) 
+			{
+				System.out.println("Falha na criação do socket");
+			}
+			
 		}
 	}
 	

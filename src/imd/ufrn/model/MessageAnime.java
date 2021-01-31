@@ -5,6 +5,7 @@ public class MessageAnime
 	private String name;
 	private int episodes;
 	private String summary;
+	private int userToken;
 	
 	public String getName() {
 		return name;
@@ -24,4 +25,11 @@ public class MessageAnime
 	public void setSummary(String summary) {
 		this.summary = summary;
 	}
+	public int getUserToken() {
+		return userToken;
+	}
+	public void setUserToken(int userToken) {
+		this.userToken = userToken;
+	}
+	
 }

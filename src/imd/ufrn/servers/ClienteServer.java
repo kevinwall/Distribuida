@@ -5,6 +5,7 @@ import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 import com.google.gson.Gson;
@@ -19,6 +20,8 @@ import imd.ufrn.model.MessageSyncClient;
 public class ClienteServer 
 {
 	private ArrayList<Cliente> clientes = new ArrayList<Cliente>();
+	private static ArrayList<Integer> validatedTokens;
+	private int count = 0;
 	
 	public ClienteServer() {
 		System.out.println("Client Server Started");
@@ -47,10 +50,14 @@ public class ClienteServer
 							cadastrarUsuario(msg, receivePacket);
 							break;
 						case 2:
-							consultarUsuario(msg);
+							consultarUsuario(msg, receivePacket);
 							break;
 						case 9:
 							sincronize(msg);
+							break;
+						case 11:
+							verifyToken(msg, receivePacket);
+							break;
 					}
 				}
 				else 
@@ -67,6 +74,67 @@ public class ClienteServer
 		}
 	}
 	
+	private void verifyToken(Message msg, DatagramPacket receivePacket) 
+	{
+		System.out.println("Cheguei na verificação do servidor de usuário");
+		String dummy = msg.getContent();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(dummy));
+		reader.setLenient(true);
+		
+		int tokenVerify = gson.fromJson(reader, int.class);
+		
+		if(validatedTokens!=null) 
+		{
+			try {
+				DatagramSocket feedbackSocket = new DatagramSocket();
+				boolean flag = false;
+				for (Integer e : validatedTokens) 
+				{
+					if(e == tokenVerify) 
+					{
+						flag = true;
+						try {
+							Message feedback = new Message();
+							feedback.setType(12);
+							feedback.setContent(gson.toJson(1, int.class));
+							byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+							DatagramPacket sendPacket = new DatagramPacket(
+									sendMessage, sendMessage.length,
+									receivePacket.getAddress(), receivePacket.getPort());
+							feedbackSocket.send(sendPacket);
+						}catch(IOException e1) 
+						{
+							System.out.println("Deu ruim");
+						}
+					}
+				}
+				
+				if(!flag) 
+				{
+					Message feedback = new Message();
+					feedback.setType(12);
+					feedback.setContent(gson.toJson(2, int.class));
+					byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+					DatagramPacket sendPacket = new DatagramPacket(
+							sendMessage, sendMessage.length,
+							receivePacket.getAddress(), receivePacket.getPort());
+					try {
+						feedbackSocket.send(sendPacket);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				}
+				
+				feedbackSocket.close();
+			} catch (SocketException e2) {
+				e2.printStackTrace();
+			}
+			
+		}
+	}
+	
 	private void sincronize(Message msg) 
 	{
 		String dummy = msg.getContent();
@@ -78,11 +146,24 @@ public class ClienteServer
 		MessageSyncClient dummy2 = gson.fromJson(reader, MessageSyncClient.class);
 		
 		clientes = dummy2.getClients();
+		if(dummy2.getTokens() != null) 
+		{
+			validatedTokens = dummy2.getTokens();
+		}
 		
 		System.out.println("Clientes cadastrados: ");
 		for (Cliente e : clientes) 
 		{
 			System.out.println(e.getUsername());
+		}
+		
+		if(validatedTokens != null) 
+		{
+			System.out.println("Tokens cadastrados: ");
+			for (Integer e : validatedTokens) 
+			{
+				System.out.println(e);
+			}
 		}
 	}
 	
@@ -131,7 +212,7 @@ public class ClienteServer
 		
 	}
 	
-	private void consultarUsuario(Message msg) 
+	private void consultarUsuario(Message msg, DatagramPacket receivePacket) 
 	{
 		String dummy = msg.getContent();
 		
@@ -149,11 +230,49 @@ public class ClienteServer
 			if(e.getUsername().contentEquals(temp.getUsername()) && e.getPassword().contentEquals(temp.getPassword()))
 			{
 				System.out.print("Usuário " + temp.getUsername() + " logado no sistema");
+				count += 1;
+				validatedTokens.add(count);
+				try {
+					DatagramSocket feedbackSocket = new DatagramSocket();
+					
+					Message feedback = new Message();
+					MessageSyncClient syncList = new MessageSyncClient();
+					syncList.setClients(clientes);
+					syncList.setTokens(validatedTokens);
+					syncList.setToken(count);
+					
+					feedback.setType(6);
+					feedback.setContent(gson.toJson(syncList, MessageSyncClient.class));
+					
+					System.out.println("Enviando feedback para: " + receivePacket.getPort());
+					
+					byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+					DatagramPacket sendPacket = new DatagramPacket(
+							sendMessage, sendMessage.length,
+							receivePacket.getAddress(), receivePacket.getPort());
+					feedbackSocket.send(sendPacket);
+					
+					Message tokenCliente = new Message();
+					tokenCliente.setType(6);
+					tokenCliente.setContent(gson.toJson(count, int.class));
+					
+					byte[] sendToken = gson.toJson(tokenCliente, Message.class).getBytes();
+					DatagramPacket tokenPacket = new DatagramPacket(
+							sendToken, sendToken.length,
+							receivePacket.getAddress(), receivePacket.getPort());
+					feedbackSocket.send(tokenPacket);
+					
+					feedbackSocket.close();
+				}catch(IOException i) 
+				{
+					System.out.print("Erro no envio do feedback de login");
+				}
 			}
 		}
 	}
 	
 	public static void main(String[] args) { 
+		validatedTokens = new ArrayList<Integer>();
 		new ClienteServer();    
 	}
 }

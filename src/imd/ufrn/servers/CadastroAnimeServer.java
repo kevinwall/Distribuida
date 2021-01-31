@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import com.google.gson.Gson;
@@ -110,38 +111,99 @@ public class CadastroAnimeServer
 	
 	private void cadastrarAnime(Message msg, DatagramPacket receivePacket) 
 	{
-		String dummy = msg.getContent();
-		
-		Gson gson = new Gson();
-		JsonReader reader = new JsonReader(new StringReader(dummy));
-		reader.setLenient(true);
-		MessageAnime dummy2 = gson.fromJson(reader, MessageAnime.class);
-		
-		Anime anm = new Anime();
-		
-		anm.setName(dummy2.getName());
-		anm.setEpisodes(dummy2.getEpisodes());
-		anm.setSummmary(dummy2.getSummary());
-		
-		animes.add(anm);
-		
 		try {
+			String dummy = msg.getContent();
+		
 			DatagramSocket feedbackSocket = new DatagramSocket();
+		
+			Gson gson = new Gson();
+			JsonReader reader = new JsonReader(new StringReader(dummy));
+			reader.setLenient(true);
+			MessageAnime dummy2 = gson.fromJson(reader, MessageAnime.class);
+		
+			int userToken = dummy2.getUserToken();
 			
-			Message feedback = new Message();
-			MessageSyncAnime syncList = new MessageSyncAnime();
-			syncList.setAnimes(animes);
+			Message identify = new Message();
+			identify.setType(11);
+			identify.setContent(gson.toJson(userToken, int.class));
 			
-			feedback.setType(7);
-			feedback.setContent(gson.toJson(syncList, MessageSyncAnime.class));
-			
-			System.out.println("Enviando feedback para: " + receivePacket.getPort());
-			
-			byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
-			DatagramPacket sendPacket = new DatagramPacket(
-					sendMessage, sendMessage.length,
+			byte[] tokenMessage = gson.toJson(identify, Message.class).getBytes();
+			DatagramPacket tokenPacket = new DatagramPacket(
+					tokenMessage , tokenMessage.length,
 					receivePacket.getAddress(), receivePacket.getPort());
-			feedbackSocket.send(sendPacket);
+			feedbackSocket.send(tokenPacket);
+			
+			try {
+				byte[] receiveValidateToken = new byte[1024];
+				DatagramPacket tokenValidate = new DatagramPacket(receiveValidateToken , receiveValidateToken.length);
+				feedbackSocket.setSoTimeout(4000);
+				feedbackSocket.receive(tokenValidate);
+				
+				String tokenValidateMessage = new String(tokenValidate.getData());
+				
+				System.out.println(tokenValidateMessage);
+				JsonReader leitor = new JsonReader(new StringReader(tokenValidateMessage));
+				leitor.setLenient(true);
+				
+				Message tokenFeedback = gson.fromJson(leitor, Message.class);
+				
+				if(tokenFeedback.getType() == 12) 
+				{
+					int feedback = gson.fromJson(tokenFeedback.getContent(), int.class);
+					
+					if(feedback == 1) 
+					{
+						System.out.println("Recebi o feedback");
+						Anime anm = new Anime();
+						
+						anm.setName(dummy2.getName());
+						anm.setEpisodes(dummy2.getEpisodes());
+						anm.setSummmary(dummy2.getSummary());
+					
+						animes.add(anm);
+						
+						Message feedback2 = new Message();
+						MessageSyncAnime syncList = new MessageSyncAnime();
+						syncList.setAnimes(animes);
+						
+						feedback2.setType(7);
+						feedback2.setContent(gson.toJson(syncList, MessageSyncAnime.class));
+						
+						System.out.println("Enviando feedback para: " + receivePacket.getPort());
+						
+						byte[] sendMessage = gson.toJson(feedback2, Message.class).getBytes();
+						DatagramPacket sendPacket = new DatagramPacket(
+								sendMessage, sendMessage.length,
+								receivePacket.getAddress(), receivePacket.getPort());
+						feedbackSocket.send(sendPacket);
+						
+					}
+					else 
+					{
+						Message feedback2 = new Message();
+						
+						feedback2.setType(13);
+						
+						//System.out.println("Enviando feedback para: " + receivePacket.getPort());
+						
+						byte[] sendMessage = gson.toJson(feedback2, Message.class).getBytes();
+						DatagramPacket sendPacket = new DatagramPacket(
+								sendMessage, sendMessage.length,
+								receivePacket.getAddress(), receivePacket.getPort());
+						feedbackSocket.send(sendPacket);
+						System.out.println("O cliente não está logado");
+					}
+					
+				}else 
+				{
+					System.out.println("Mensagem errada recebida");
+				}
+				
+			}catch(SocketTimeoutException ex) 
+			{
+				System.out.println("Erro na validação de usuário");
+			}
+			
 			
 			feedbackSocket.close();
 		}catch(IOException e) 
