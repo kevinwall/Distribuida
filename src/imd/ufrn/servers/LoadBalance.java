@@ -345,10 +345,6 @@ public class LoadBalance
 									flag = true;
 								}
 								break;
-							case 8:
-								redirectSendSocket.send(receivePacket);
-								flag = true;
-								break;
 						}
 					}	
 				if(flag) 
