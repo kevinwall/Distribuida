@@ -15,12 +15,12 @@ import com.google.gson.stream.JsonReader;
 import imd.ufrn.model.LoadAux;
 import imd.ufrn.model.Message;
 
-public class LoadBalance 
+public class LoadBalance2 
 {
 	private ArrayList<LoadAux> portsClientes = new ArrayList<LoadAux>();
 	private ArrayList<LoadAux> portsAnimes = new ArrayList<LoadAux>();
 	
-	public LoadBalance() {
+	public LoadBalance2() {
 		LoadAux cliente1 = new LoadAux();
 		cliente1.setLoad(0);
 		cliente1.setPort(9040);
@@ -40,7 +40,7 @@ public class LoadBalance
 		
 		System.out.println("Load Balance Started");
 		try {
-			DatagramSocket serverSocket = new DatagramSocket(9010);
+			DatagramSocket serverSocket = new DatagramSocket(9011);
 			while (true) {
 				byte[] receiveMessage = new byte[1024];
 				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
@@ -440,6 +440,6 @@ public class LoadBalance
 	}
 	
 	public static void main(String[] args) { 
-		new LoadBalance();    
+		new LoadBalance2();    
 	}
 }

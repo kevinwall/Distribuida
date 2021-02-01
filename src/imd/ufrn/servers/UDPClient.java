@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
@@ -21,25 +22,52 @@ import imd.ufrn.model.MessageSyncClient;
 class UDPClient {
 
 	private int token;
+	private ArrayList<Integer> lbs = new ArrayList<Integer>();
 	
 	private void sendMessage(String message, DatagramSocket clientSocket, InetAddress inetAddress) 
 	{
-		byte[] sendMessage;
-		int port = 9010;
-		sendMessage = message.getBytes();
-		DatagramPacket sendPacket = new DatagramPacket(
-				sendMessage, sendMessage.length,
-				inetAddress, port);
-		try {
-			clientSocket.send(sendPacket);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		boolean flag = false;
+		for (Integer e : lbs) 
+		{
+			byte[] sendMessage;
+			//int port = 9010;
+			sendMessage = message.getBytes();
+			DatagramPacket sendPacket = new DatagramPacket(
+					sendMessage, sendMessage.length,
+					inetAddress, e);
+			try {
+				clientSocket.send(sendPacket);
+			}catch (IOException ex) 
+			{
+				System.out.println("Erro no envio da mensagem");
+			}
+			
+			byte[] receiveMessage = new byte[1024];
+			DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+			
+			try {
+				clientSocket.setSoTimeout(1000);
+				clientSocket.receive(receivePacket);
+				flag = true;
+			} catch (SocketTimeoutException ex) {
+				System.out.println("Tentando outro Load Balancer...");
+				continue;
+			} catch (IOException ex) 
+			{
+				System.out.println("Erro ao criar o timeout");
+			}
+			
+			if(flag) 
+			{
+				break;
+			}
 		}
 	}
 	
 	public UDPClient() {
 		System.out.println("UDP Client Started");
+		lbs.add(9010);
+		lbs.add(9011);
 		Scanner scanner = new Scanner(System.in);
 		try {
 			DatagramSocket clientSocket = new DatagramSocket();
