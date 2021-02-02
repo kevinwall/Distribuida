@@ -1,6 +1,8 @@
 package imd.ufrn.model;
 
-public class LoadAux 
+import java.io.Serializable;
+
+public class LoadAux implements Serializable
 {
 	private int load;
 	private int port;

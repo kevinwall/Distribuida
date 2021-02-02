@@ -1,6 +1,8 @@
 package imd.ufrn.model;
 
-public class MessageCadastro
+import java.io.Serializable;
+
+public class MessageCadastro implements Serializable
 {
 	private String usuario;
 	private String senha;

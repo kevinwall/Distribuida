@@ -1,6 +1,8 @@
 package imd.ufrn.model;
 
-public class MessageScore 
+import java.io.Serializable;
+
+public class MessageScore implements Serializable
 {
 	private String name;
 	private double score;

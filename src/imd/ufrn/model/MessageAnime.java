@@ -1,6 +1,8 @@
 package imd.ufrn.model;
 
-public class MessageAnime 
+import java.io.Serializable;
+
+public class MessageAnime implements Serializable
 {
 	private String name;
 	private int episodes;

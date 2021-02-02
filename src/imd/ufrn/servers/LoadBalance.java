@@ -260,6 +260,9 @@ public class LoadBalance
 								break;
 						}
 					}	
+				
+				// i.setLoad(i.getLoad() - 1);
+					
 				if(flag) 
 				{
 					break;
@@ -360,6 +363,9 @@ public class LoadBalance
 								break;
 						}
 					}	
+					
+				// i.setLoad(i.getLoad() - 1);
+					
 				if(flag) 
 				{
 					break;

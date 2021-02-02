@@ -1,8 +1,9 @@
 package imd.ufrn.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class MessageSyncAnime 
+public class MessageSyncAnime implements Serializable
 {
 	private ArrayList<Anime> animes;
 

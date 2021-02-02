@@ -1,8 +1,9 @@
 package imd.ufrn.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class MessageSyncClient 
+public class MessageSyncClient implements Serializable
 {
 	private ArrayList<Cliente> clients;
 	private ArrayList<Integer> tokens;
