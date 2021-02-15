@@ -5,7 +5,11 @@ import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -23,25 +27,81 @@ class UDPClient {
 
 	private int token;
 	private ArrayList<Integer> lbs = new ArrayList<Integer>();
+	private static final int BUFFER_SIZE = 1024;
 	
-	private void sendMessage(String message, DatagramSocket clientSocket, InetAddress inetAddress) 
+	private void sendMessage(String message) 
 	{
 		boolean flag = false;
 		for (Integer e : lbs) 
 		{
-			byte[] sendMessage;
-			//int port = 9010;
-			sendMessage = message.getBytes();
-			DatagramPacket sendPacket = new DatagramPacket(
-					sendMessage, sendMessage.length,
-					inetAddress, e);
+			InetAddress hostIP = null;
 			try {
-				clientSocket.send(sendPacket);
-			}catch (IOException ex) 
-			{
-				System.out.println("Erro no envio da mensagem");
+				hostIP = InetAddress.getLocalHost();
+			} catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
 			
+			InetSocketAddress myAddress = new InetSocketAddress(hostIP, e);
+			
+			SocketChannel myClient = null;
+			try {
+				myClient = SocketChannel.open(myAddress);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+			myBuffer.put(message.getBytes());
+			myBuffer.flip();
+			
+			try {
+				myClient.write(myBuffer);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			//byte[] sendMessage;
+			//int port = 9010;
+			//sendMessage = message.getBytes();
+			//DatagramPacket sendPacket = new DatagramPacket(
+			//		sendMessage, sendMessage.length,
+			//		inetAddress, e);
+			//try {
+			//	clientSocket.send(sendPacket);
+			//}catch (IOException ex) 
+			//{
+			//	System.out.println("Erro no envio da mensagem");
+			//}
+			
+			Message msg = new Message();
+			msg.setType(1);
+			msg.setContent("*exit*");
+			
+			Gson gson = new Gson();
+			String aa = gson.toJson(msg, Message.class);
+			
+			ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
+			myBuffer2.put(aa.getBytes());
+			myBuffer2.flip();
+			
+			try {
+				myClient.write(myBuffer2);
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
+			try {
+				myClient.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			/*
 			byte[] receiveMessage = new byte[1024];
 			DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
 			
@@ -61,13 +121,14 @@ class UDPClient {
 			{
 				break;
 			}
+		*/
 		}
 	}
 	
 	public UDPClient() {
 		System.out.println("UDP Client Started");
 		lbs.add(9010);
-		lbs.add(9011);
+		//lbs.add(9011);
 		Scanner scanner = new Scanner(System.in);
 		try {
 			DatagramSocket clientSocket = new DatagramSocket();
@@ -99,7 +160,7 @@ class UDPClient {
 						//port = 9003;
 						dummy = gson.toJson(msg);
 						
-						sendMessage(dummy, clientSocket, inetAddress);
+						sendMessage(dummy);
 						
 						break;
 					case "2":
@@ -115,7 +176,7 @@ class UDPClient {
 						//port = 9003;
 						dummy = gson.toJson(msg);
 						
-						sendMessage(dummy, clientSocket, inetAddress);
+						sendMessage(dummy);
 						
 						byte[] receiveMessage = new byte[1024];
 						DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
@@ -160,7 +221,7 @@ class UDPClient {
 						//port = 9004;
 						dummy = gson.toJson(msg);
 						
-						sendMessage(dummy, clientSocket, inetAddress);
+						sendMessage(dummy);
 						break;
 					case "4":
 						msg.setType(4);
@@ -175,7 +236,7 @@ class UDPClient {
 						//port = 9004;
 						dummy = gson.toJson(msg);
 						
-						sendMessage(dummy, clientSocket, inetAddress);
+						sendMessage(dummy);
 						break;
 					default:
 						msg = null;

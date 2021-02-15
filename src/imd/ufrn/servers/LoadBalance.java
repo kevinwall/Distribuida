@@ -5,9 +5,18 @@ import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
@@ -17,8 +26,66 @@ import imd.ufrn.model.Message;
 
 public class LoadBalance 
 {
-	private ArrayList<LoadAux> portsClientes = new ArrayList<LoadAux>();
-	private ArrayList<LoadAux> portsAnimes = new ArrayList<LoadAux>();
+	private static ArrayList<LoadAux> portsClientes = new ArrayList<LoadAux>();
+	private static ArrayList<LoadAux> portsAnimes = new ArrayList<LoadAux>();
+	private static Selector selector = null;
+	private static final int BUFFER_SIZE = 1024;
+	
+	private static void processAcceptEvent(ServerSocketChannel mySocket,
+			SelectionKey key) throws IOException 
+	{
+		System.out.println("Connection Accepted...");
+		// Accept the connection and make it non-blocking
+		SocketChannel myClient = mySocket.accept();
+		myClient.configureBlocking(false);
+		// Register interest in reading this channel
+		myClient.register(selector, SelectionKey.OP_READ);
+	}
+	
+	private static void processReadEvent(SelectionKey key) throws IOException 
+	{
+		System.out.println("Inside processReadEvent...");
+		// create a ServerSocketChannel to read the request
+		SocketChannel myClient = (SocketChannel) key.channel();
+		// Set up out 1k buffer to read data into
+		ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+		myClient.read(myBuffer);
+		String data = new String(myBuffer.array()).trim();
+		
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(data));
+		reader.setLenient(true);
+		Message msg = gson.fromJson(reader, Message.class);
+		
+		if(msg != null) 
+		{
+			
+			int type = msg.getType();
+			
+			switch(type) 
+			{
+				case 1:
+					redirectCliente(data);
+					break;
+				case 2:
+					redirectCliente(data);
+					break;
+				//case 3:
+				//	redirectAnime(data);
+				//	break;
+				//case 4:
+				//	redirectAnime(data);
+				//	break;
+			}
+		}
+		else 
+		{
+			System.out.print("Null message");
+		}
+		
+		myClient.close();
+		System.out.println("Closing Server Connection...");
+	}
 	
 	public LoadBalance() {
 		LoadAux cliente1 = new LoadAux();
@@ -40,56 +107,33 @@ public class LoadBalance
 		
 		System.out.println("Load Balance Started");
 		try {
-			DatagramSocket serverSocket = new DatagramSocket(9010);
+			InetAddress hostIP= InetAddress.getLocalHost();
+			int port = 9010;
+			selector = Selector.open();
+			ServerSocketChannel mySocket = ServerSocketChannel.open();
+			ServerSocket serverSocket = mySocket.socket();
+			InetSocketAddress address = new InetSocketAddress(hostIP, port);
+			serverSocket.bind(address);
+			mySocket.configureBlocking(false);
+			mySocket.register(selector,SelectionKey.OP_ACCEPT);
+			
 			while (true) {
-				byte[] receiveMessage = new byte[1024];
-				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
-				serverSocket.receive(receivePacket);
-				String message = new String(receivePacket.getData());
+				selector.select();
+				Set<SelectionKey> selectedKeys = selector.selectedKeys();
+				Iterator<SelectionKey> i = selectedKeys.iterator();
 				
-				// JSON Update
-				Gson gson = new Gson();
-				JsonReader reader = new JsonReader(new StringReader(message));
-				reader.setLenient(true);
-				Message msg = gson.fromJson(reader, Message.class);
-				// END
-				
-				if(msg != null) 
+				while (i.hasNext()) 
 				{
-					byte[] ackMessage;
-					//int port = 9010;
-					Message ackMsg = new Message();
-					ackMsg.setType(14);
-					
-					ackMessage = gson.toJson(ackMsg, Message.class).getBytes();
-					
-					DatagramPacket sendPacket = new DatagramPacket(
-							ackMessage, ackMessage.length,
-							receivePacket.getAddress(), receivePacket.getPort());
-					
-					serverSocket.send(sendPacket);
-					
-					int type = msg.getType();
-					
-					switch(type) 
+					SelectionKey key = i.next();
+					if (key.isAcceptable()) 
 					{
-						case 1:
-							redirectCliente(message, receivePacket.getPort());
-							break;
-						case 2:
-							redirectCliente(message, receivePacket.getPort());
-							break;
-						case 3:
-							redirectAnime(message);
-							break;
-						case 4:
-							redirectAnime(message);
-							break;
+						processAcceptEvent(mySocket, key);
+					} 
+					else if (key.isReadable()) 
+					{
+						processReadEvent(key);
 					}
-				}
-				else 
-				{
-					System.out.print("Null message");
+					i.remove();
 				}
 			}
 		}catch (IOException e) {
@@ -98,50 +142,61 @@ public class LoadBalance
 		}
 	}
 	
-	private void sincronizeClient(DatagramPacket message, int clientPort) 
+	
+	private static void sincronizeClient(String data, int clientPort) 
 	{
-		try {
-			DatagramSocket sincronizeSendSocket = new DatagramSocket();
-			InetAddress inetAddress = InetAddress.getByName("localhost");
-			byte[] sendMessage;
+			//DatagramSocket sincronizeSendSocket = new DatagramSocket();
+			//InetAddress inetAddress = InetAddress.getByName("localhost");
+			//byte[] sendMessage;
 			
-			for (LoadAux i : portsClientes) 
-			{
-				if(i.getPort() != clientPort) 
-				{
-					System.out.println("Entrei no if");
-					try {
-						String returnMessage = new String(message.getData());
-						
-						Gson gson = new Gson();
-						JsonReader reader = new JsonReader(new StringReader(returnMessage));
-						reader.setLenient(true);
-						Message msg = gson.fromJson(reader, Message.class);
-						msg.setType(9);
-						
-						sendMessage = gson.toJson(msg).getBytes();
-						DatagramPacket sendPacket = new DatagramPacket(
-								sendMessage, sendMessage.length,
-								inetAddress, i.getPort());
-						
-						sincronizeSendSocket.send(sendPacket);
-							
-					}catch(IOException e) 
-					{
-						System.out.println("Failed to send the message");
-					}
-				}	
-			}
-			
-			//redirectReciveSocket.close();
-			sincronizeSendSocket.close();
-		}catch(IOException e) 
+		for (LoadAux i : portsClientes) 
 		{
-			System.out.println("Failed to connect");
+			if(i.getPort() != clientPort) 
+			{
+				System.out.println("Entrei no if");
+				try {
+						//String returnMessage = new String(message.getData());
+						
+					Gson gson = new Gson();
+					JsonReader reader = new JsonReader(new StringReader(data));
+					reader.setLenient(true);
+					Message msg = gson.fromJson(reader, Message.class);
+					msg.setType(9);
+						
+						
+					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+					myBuffer.put(gson.toJson(msg).getBytes());
+					myBuffer.flip();
+						
+					InetAddress hostIP = InetAddress.getLocalHost();
+						
+					InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
+						
+					SocketChannel myClient = SocketChannel.open(myAddress);
+						
+					myClient.write(myBuffer);
+						//sendMessage = gson.toJson(msg).getBytes();
+						//DatagramPacket sendPacket = new DatagramPacket(
+						//		sendMessage, sendMessage.length,
+						//		inetAddress, i.getPort());
+						
+						//sincronizeSendSocket.send(sendPacket);
+						
+					myClient.close();
+						
+				}catch(IOException e) 
+				{
+					System.out.println("Failed to send the message");
+				}
+			}	
 		}
+		//redirectReciveSocket.close();
+		//sincronizeSendSocket.close();
 	}
 	
-	private void sincronizeAnime(DatagramPacket message, int clientPort) 
+	
+	/*
+	private void sincronizeAnime(DatagramPacket message, SocketChannel myClient) 
 	{
 		try {
 			DatagramSocket sincronizeSendSocket = new DatagramSocket();
@@ -183,15 +238,15 @@ public class LoadBalance
 			System.out.println("Failed to connect");
 		}
 	}
-	
-	private void redirectCliente(String message, int clientPort) 
+	*/
+	private static void redirectCliente(String message) 
 	{
 		try {
-			DatagramSocket redirectSendSocket = new DatagramSocket();
+			//DatagramSocket redirectSendSocket = new DatagramSocket();
 			//DatagramSocket redirectReciveSocket = new DatagramSocket();
 			//redirectReciveSocket.setSoTimeout(4000);
-			InetAddress inetAddress = InetAddress.getByName("localhost");
-			byte[] sendMessage;
+			//InetAddress inetAddress = InetAddress.getByName("localhost");
+			//byte[] sendMessage;
 			
 			boolean flag = false;
 			
@@ -212,30 +267,46 @@ public class LoadBalance
 			for (LoadAux i : portsClientes) 
 			{
 				try {
-					System.out.println("Porta do cliente: " + clientPort);
+					//System.out.println("Porta do cliente: " + clientPort);
 					// Sending packet
-					sendMessage = message.getBytes();
-					DatagramPacket sendPacket = new DatagramPacket(
-							sendMessage, sendMessage.length,
-							inetAddress, i.getPort());
+					//sendMessage = message.getBytes();
+					//DatagramPacket sendPacket = new DatagramPacket(
+					//		sendMessage, sendMessage.length,
+					//		inetAddress, i.getPort());
 					
 					i.setLoad(i.getLoad() + 1);
 					
-					redirectSendSocket.send(sendPacket);
+					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+					myBuffer.put(message.getBytes());
+					myBuffer.flip();
+					
+					InetAddress hostIP = InetAddress.getLocalHost();
+					
+					InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
+					
+					SocketChannel myClient = SocketChannel.open(myAddress);
+					
+					myClient.write(myBuffer);
+					
+					ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
+					myClient.read(myBuffer2);
+					String data = new String(myBuffer.array()).trim();
+					
+					//redirectSendSocket.send(sendPacket);
 					
 					//Waiting for response
-					byte[] receiveMessage = new byte[1024];
-					DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
-					redirectSendSocket.setSoTimeout(4000);
-					redirectSendSocket.receive(receivePacket);
+					//byte[] receiveMessage = new byte[1024];
+					//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+					//redirectSendSocket.setSoTimeout(4000);
+					//redirectSendSocket.receive(receivePacket);
 					
-					String returnMessage = new String(receivePacket.getData());
+					//String returnMessage = new String(receivePacket.getData());
 					
-					System.out.println("Mensagem de feedback recebida: " + returnMessage);
+					//System.out.println("Mensagem de feedback recebida: " + returnMessage);
 					
 					// JSON Update
 					Gson gson = new Gson();
-					JsonReader reader = new JsonReader(new StringReader(returnMessage));
+					JsonReader reader = new JsonReader(new StringReader(data));
 					reader.setLenient(true);
 					Message msg = gson.fromJson(reader, Message.class);
 					
@@ -244,23 +315,24 @@ public class LoadBalance
 						switch(msg.getType()) 
 						{
 							case 5:
-								sincronizeClient(receivePacket, i.getPort());
+								sincronizeClient(data, i.getPort());
 								System.out.println("Cadastro realizado com sucesso");
 								flag = true;
 								break;
 							case 6:
-								sincronizeClient(receivePacket, i.getPort());
-								byte[] tokenMessage;
-								tokenMessage = returnMessage.getBytes();
-								DatagramPacket tokenPacket = new DatagramPacket(
-										tokenMessage, tokenMessage.length,
-										inetAddress, clientPort);
-								redirectSendSocket.send(tokenPacket);
-								flag = true;
+								sincronizeClient(data, i.getPort());
+								//byte[] tokenMessage;
+								//tokenMessage = returnMessage.getBytes();
+								//DatagramPacket tokenPacket = new DatagramPacket(
+								//		tokenMessage, tokenMessage.length,
+								//		inetAddress, clientPort);
+								//redirectSendSocket.send(tokenPacket);
+								//flag = true;
 								break;
 						}
 					}	
 				
+				myClient.close();
 				// i.setLoad(i.getLoad() - 1);
 					
 				if(flag) 
@@ -275,14 +347,15 @@ public class LoadBalance
 			}
 			
 			//redirectReciveSocket.close();
-			redirectSendSocket.close();
+			//redirectSendSocket.close();
 		}catch(IOException e) 
 		{
 			System.out.println("Failed to connect");
 		}
 	}
 	
-	private void redirectAnime(String message) 
+	/*
+	private static void redirectAnime(String message) 
 	{
 		try {
 			DatagramSocket redirectSendSocket = new DatagramSocket();
@@ -384,7 +457,7 @@ public class LoadBalance
 			System.out.println("Failed to connect");
 		}
 	}
-	
+	*/
 	private void autorizeToken(DatagramPacket message) 
 	{
 		portsClientes.sort((LoadAux rhs, LoadAux lhs) ->
