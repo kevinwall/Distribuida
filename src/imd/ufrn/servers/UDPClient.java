@@ -51,8 +51,8 @@ class UDPClient {
 			try {
 				myClient = SocketChannel.open(myAddress);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				System.out.println("Tentando outro load balance...");
+				continue;
 			}
 			
 			ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
@@ -62,9 +62,10 @@ class UDPClient {
 			try {
 				myClient.write(myBuffer);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			
+			flag = true;
 			
 			if(msg.getType() == 2) 
 			{
@@ -98,13 +99,18 @@ class UDPClient {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			
+			if(flag) 
+			{
+				break;
+			}
 		}
 	}
 	
 	public UDPClient() {
 		System.out.println("UDP Client Started");
 		lbs.add(9010);
-		//lbs.add(9011);
+		lbs.add(9011);
 		Scanner scanner = new Scanner(System.in);
 		try {
 			DatagramSocket clientSocket = new DatagramSocket();
