@@ -65,10 +65,10 @@ public class LoadBalance
 			switch(type) 
 			{
 				case 1:
-					redirectCliente(data);
+					redirectCliente(data, myClient);
 					break;
 				case 2:
-					redirectCliente(data);
+					redirectCliente(data, myClient);
 					break;
 				//case 3:
 				//	redirectAnime(data);
@@ -153,7 +153,7 @@ public class LoadBalance
 		{
 			if(i.getPort() != clientPort) 
 			{
-				System.out.println("Entrei no if");
+				//System.out.println("Entrei no if");
 				try {
 						//String returnMessage = new String(message.getData());
 						
@@ -187,6 +187,7 @@ public class LoadBalance
 				}catch(IOException e) 
 				{
 					System.out.println("Failed to send the message");
+					continue;
 				}
 			}	
 		}
@@ -239,9 +240,9 @@ public class LoadBalance
 		}
 	}
 	*/
-	private static void redirectCliente(String message) 
+	private static void redirectCliente(String message, SocketChannel myClient) 
 	{
-		try {
+		System.out.println("Mensagem recebida do cliente: " + message);
 			//DatagramSocket redirectSendSocket = new DatagramSocket();
 			//DatagramSocket redirectReciveSocket = new DatagramSocket();
 			//redirectReciveSocket.setSoTimeout(4000);
@@ -276,22 +277,28 @@ public class LoadBalance
 					
 					i.setLoad(i.getLoad() + 1);
 					
+					System.out.println("Estou tentando enviar a mensagem para o servidor");
 					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 					myBuffer.put(message.getBytes());
 					myBuffer.flip();
+					
 					
 					InetAddress hostIP = InetAddress.getLocalHost();
 					
 					InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
 					
-					SocketChannel myClient = SocketChannel.open(myAddress);
 					
-					myClient.write(myBuffer);
+					SocketChannel myClient2 = SocketChannel.open(myAddress);
+					
+					myClient2.write(myBuffer);
+					System.out.println("Enviei a mensagem para o servidor");
 					
 					ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
-					myClient.read(myBuffer2);
-					String data = new String(myBuffer.array()).trim();
+					System.out.println("Estou tentando receber o feedback do servidor");
+					myClient2.read(myBuffer2);
 					
+					String data = new String(myBuffer2.array()).trim();
+					System.out.println("Recebi o feedback do servidor");
 					//redirectSendSocket.send(sendPacket);
 					
 					//Waiting for response
@@ -310,36 +317,50 @@ public class LoadBalance
 					reader.setLenient(true);
 					Message msg = gson.fromJson(reader, Message.class);
 					
+					//System.out.println("Mensagem que chegou ao loadBalance: " + message);
+					System.out.println("Mensagem de feedback do ClientServer: " + data);
+					
 					if(msg != null) 
 					{
 						switch(msg.getType()) 
 						{
 							case 5:
+								System.out.println("Entrei no case 5");
 								sincronizeClient(data, i.getPort());
 								System.out.println("Cadastro realizado com sucesso");
 								flag = true;
 								break;
 							case 6:
+								System.out.println("Entrei no case 6");
 								sincronizeClient(data, i.getPort());
+								System.out.println("Tentando enviar o token para o cliente: " + data);
+								ByteBuffer bufferToken = ByteBuffer.allocate(BUFFER_SIZE);
+								bufferToken.put(data.getBytes());
+								//System.out.println("Buffer token: " + new String(bufferToken.array()).trim());
+								bufferToken.flip();
+								myClient.write(bufferToken);
+								//myClient.
+								System.out.println("Token enviado para o cliente");
 								//byte[] tokenMessage;
 								//tokenMessage = returnMessage.getBytes();
 								//DatagramPacket tokenPacket = new DatagramPacket(
 								//		tokenMessage, tokenMessage.length,
 								//		inetAddress, clientPort);
 								//redirectSendSocket.send(tokenPacket);
-								//flag = true;
+								flag = true;
 								break;
 						}
 					}	
 				
-				myClient.close();
+				myClient2.close();
 				// i.setLoad(i.getLoad() - 1);
 					
 				if(flag) 
 				{
+					System.out.println("Breaking the balance loop in RedirectClient");
 					break;
 				}
-				}catch(SocketTimeoutException e) 
+				}catch(IOException e2) 
 				{
 					System.out.println("Trying another server...");
 					continue;
@@ -348,10 +369,6 @@ public class LoadBalance
 			
 			//redirectReciveSocket.close();
 			//redirectSendSocket.close();
-		}catch(IOException e) 
-		{
-			System.out.println("Failed to connect");
-		}
 	}
 	
 	/*

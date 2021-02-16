@@ -29,9 +29,12 @@ class UDPClient {
 	private ArrayList<Integer> lbs = new ArrayList<Integer>();
 	private static final int BUFFER_SIZE = 1024;
 	
-	private void sendMessage(String message) 
+	private void sendMessage(Message msg) 
 	{
 		boolean flag = false;
+		Gson gson = new Gson();
+		String message = gson.toJson(msg, Message.class);
+		
 		for (Integer e : lbs) 
 		{
 			InetAddress hostIP = null;
@@ -63,35 +66,30 @@ class UDPClient {
 				e1.printStackTrace();
 			}
 			
-			//byte[] sendMessage;
-			//int port = 9010;
-			//sendMessage = message.getBytes();
-			//DatagramPacket sendPacket = new DatagramPacket(
-			//		sendMessage, sendMessage.length,
-			//		inetAddress, e);
-			//try {
-			//	clientSocket.send(sendPacket);
-			//}catch (IOException ex) 
-			//{
-			//	System.out.println("Erro no envio da mensagem");
-			//}
-			
-			Message msg = new Message();
-			msg.setType(1);
-			msg.setContent("*exit*");
-			
-			Gson gson = new Gson();
-			String aa = gson.toJson(msg, Message.class);
-			
-			ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
-			myBuffer2.put(aa.getBytes());
-			myBuffer2.flip();
-			
-			try {
-				myClient.write(myBuffer2);
-			} catch (IOException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
+			if(msg.getType() == 2) 
+			{
+				ByteBuffer bufferToken = ByteBuffer.allocate(BUFFER_SIZE);
+				
+				try {
+					myClient.read(bufferToken);
+					//bufferToken.flip();
+					System.out.println("BufferToken: " + bufferToken.toString());
+					String data = new String(bufferToken.array()).trim();
+					
+					System.out.println("Mensagem recebida do LB: " + data);
+					
+					Message tokenMsg = gson.fromJson(data, Message.class);
+						
+					if(tokenMsg != null) 
+					{
+						MessageSyncClient msgToken = gson.fromJson(tokenMsg.getContent(), MessageSyncClient.class);
+						token = msgToken.getToken();
+						System.out.println("O token recebido foi: " + token);
+					}
+					}catch (IOException e2) 
+					{
+						System.out.println("Não recebi o feedback do token");
+					}	
 			}
 			
 			try {
@@ -100,28 +98,6 @@ class UDPClient {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			
-			/*
-			byte[] receiveMessage = new byte[1024];
-			DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
-			
-			try {
-				clientSocket.setSoTimeout(1000);
-				clientSocket.receive(receivePacket);
-				flag = true;
-			} catch (SocketTimeoutException ex) {
-				System.out.println("Tentando outro Load Balancer...");
-				continue;
-			} catch (IOException ex) 
-			{
-				System.out.println("Erro ao criar o timeout");
-			}
-			
-			if(flag) 
-			{
-				break;
-			}
-		*/
 		}
 	}
 	
@@ -141,9 +117,10 @@ class UDPClient {
 					break;
 				}
 				
-				Gson gson = new Gson();
 				Message msg = new Message();
-				String dummy;
+				Gson gson = new Gson();
+				//String dummy;
+				
 				switch(type) 
 				{
 					case "1":
@@ -158,9 +135,9 @@ class UDPClient {
 						
 						msg.setContent(gson.toJson(cadastro, MessageCadastro.class));
 						//port = 9003;
-						dummy = gson.toJson(msg);
+						//dummy = gson.toJson(msg);
 						
-						sendMessage(dummy);
+						sendMessage(msg);
 						
 						break;
 					case "2":
@@ -174,35 +151,35 @@ class UDPClient {
 
 						msg.setContent(gson.toJson(login, MessageLogin.class));
 						//port = 9003;
-						dummy = gson.toJson(msg);
+						//dummy = gson.toJson(msg);
 						
-						sendMessage(dummy);
+						sendMessage(msg);
 						
-						byte[] receiveMessage = new byte[1024];
-						DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+						//byte[] receiveMessage = new byte[1024];
+						//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
 						
-						try {
-							clientSocket.setSoTimeout(6000);
-							clientSocket.receive(receivePacket);
-						}catch(SocketTimeoutException e) 
-						{
-							System.out.println("Pacote não recebido...");
-						}
-						String recivedPacket = new String(receivePacket.getData());
-						JsonReader reader = new JsonReader(new StringReader(recivedPacket));
-						reader.setLenient(true);
-						Message tokenMsg = gson.fromJson(reader, Message.class);
+						//try {
+						//	clientSocket.setSoTimeout(6000);
+						//	clientSocket.receive(receivePacket);
+						//}catch(SocketTimeoutException e) 
+						//{
+						//	System.out.println("Pacote não recebido...");
+						//}
+						//String recivedPacket = new String(receivePacket.getData());
+						//JsonReader reader = new JsonReader(new StringReader(recivedPacket));
+						//reader.setLenient(true);
+						//Message tokenMsg = gson.fromJson(reader, Message.class);
 						
-						if(tokenMsg.getType() == 6) 
-						{
-							MessageSyncClient msgToken = gson.fromJson(tokenMsg.getContent(), MessageSyncClient.class);
-							token = msgToken.getToken();
-							System.out.println("O token recebido foi: " + token);
-						}
-						else 
-						{
-							System.out.println("Error recieving token...");
-						}
+						//if(tokenMsg.getType() == 6) 
+						//{
+						//	MessageSyncClient msgToken = gson.fromJson(tokenMsg.getContent(), MessageSyncClient.class);
+						//	token = msgToken.getToken();
+						//	System.out.println("O token recebido foi: " + token);
+						//}
+						//else 
+						//{
+						//	System.out.println("Error recieving token...");
+						//}
 						
 						break;
 					case "3":
@@ -219,9 +196,9 @@ class UDPClient {
 
 						msg.setContent(gson.toJson(anime, MessageAnime.class));
 						//port = 9004;
-						dummy = gson.toJson(msg);
+						//dummy = gson.toJson(msg);
 						
-						sendMessage(dummy);
+						sendMessage(msg);
 						break;
 					case "4":
 						msg.setType(4);
@@ -234,9 +211,9 @@ class UDPClient {
 						
 						msg.setContent(gson.toJson(score, MessageScore.class));
 						//port = 9004;
-						dummy = gson.toJson(msg);
+						//dummy = gson.toJson(msg);
 						
-						sendMessage(dummy);
+						sendMessage(msg);
 						break;
 					default:
 						msg = null;

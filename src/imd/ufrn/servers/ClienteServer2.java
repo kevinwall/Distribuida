@@ -26,7 +26,7 @@ import imd.ufrn.model.MessageCadastro;
 import imd.ufrn.model.MessageLogin;
 import imd.ufrn.model.MessageSyncClient;
 
-public class ClienteServer 
+public class ClienteServer2 
 {
 	private static ArrayList<Cliente> clientes = new ArrayList<Cliente>();
 	private static ArrayList<Integer> validatedTokens;
@@ -101,11 +101,11 @@ public class ClienteServer
 		//System.out.println("Received from client: [" + msg.getContent()+ "]\nFrom: " + receivePacket.getAddress());
 	}
 	
-	public ClienteServer() {
+	public ClienteServer2() {
 		System.out.println("Client Server Started");
 		try {
 			InetAddress hostIP= InetAddress.getLocalHost();
-			int port = 9040;
+			int port = 9041;
 			selector = Selector.open();
 			ServerSocketChannel mySocket = ServerSocketChannel.open();
 			ServerSocket serverSocket = mySocket.socket();
@@ -361,6 +361,6 @@ public class ClienteServer
 	
 	public static void main(String[] args) { 
 		validatedTokens = new ArrayList<Integer>();
-		new ClienteServer();    
+		new ClienteServer2();    
 	}
 }
