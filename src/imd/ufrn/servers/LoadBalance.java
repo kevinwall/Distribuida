@@ -74,9 +74,9 @@ public class LoadBalance
 				case 3:
 					redirectAnime(data, myClient);
 					break;
-				//case 4:
-				//	redirectAnime(data);
-				//	break;
+				case 4:
+					redirectAnime(data, myClient);
+					break;
 			}
 		}
 		else 

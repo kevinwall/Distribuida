@@ -28,7 +28,7 @@ import imd.ufrn.model.MessageScore;
 import imd.ufrn.model.MessageSyncAnime;
 import imd.ufrn.model.MessageSyncClient;
 
-public class CadastroAnimeServer 
+public class CadastroAnimeServer2 
 {
 	private static ArrayList<Anime> animes = new ArrayList<Anime>();
 	private static Selector selector = null;
@@ -99,11 +99,11 @@ public class CadastroAnimeServer
 			myClient.close();
 		//System.out.println("Received from client: [" + msg.getContent()+ "]\nFrom: " + receivePacket.getAddress());
 	}	
-	public CadastroAnimeServer() {
+	public CadastroAnimeServer2() {
 		System.out.println("Cadastro de anime server started");
 		try {
 			InetAddress hostIP= InetAddress.getLocalHost();
-			int port = 9030;
+			int port = 9031;
 			selector = Selector.open();
 			ServerSocketChannel mySocket = ServerSocketChannel.open();
 			ServerSocket serverSocket = mySocket.socket();
@@ -284,6 +284,6 @@ public class CadastroAnimeServer
 	}
 	
 	public static void main(String[] args) { 
-		new CadastroAnimeServer();    
+		new CadastroAnimeServer2();    
 	}
 }
