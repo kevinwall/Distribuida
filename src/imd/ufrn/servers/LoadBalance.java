@@ -70,9 +70,9 @@ public class LoadBalance
 				case 2:
 					redirectCliente(data, myClient);
 					break;
-				//case 3:
-				//	redirectAnime(data);
-				//	break;
+				case 3:
+					redirectAnime(data, myClient);
+					break;
 				//case 4:
 				//	redirectAnime(data);
 				//	break;
@@ -196,13 +196,11 @@ public class LoadBalance
 	}
 	
 	
-	/*
-	private void sincronizeAnime(DatagramPacket message, SocketChannel myClient) 
+	private static void sincronizeAnime(String data, int clientPort) 
 	{
-		try {
-			DatagramSocket sincronizeSendSocket = new DatagramSocket();
-			InetAddress inetAddress = InetAddress.getByName("localhost");
-			byte[] sendMessage;
+			//DatagramSocket sincronizeSendSocket = new DatagramSocket();
+			//InetAddress inetAddress = InetAddress.getByName("localhost");
+			//byte[] sendMessage;
 			
 			for (LoadAux i : portsAnimes) 
 			{
@@ -210,20 +208,27 @@ public class LoadBalance
 				{
 					System.out.println("Entrei no if");
 					try {
-						String returnMessage = new String(message.getData());
+						//String returnMessage = new String(data.getData());
 						
 						Gson gson = new Gson();
-						JsonReader reader = new JsonReader(new StringReader(returnMessage));
+						JsonReader reader = new JsonReader(new StringReader(data));
 						reader.setLenient(true);
 						Message msg = gson.fromJson(reader, Message.class);
 						msg.setType(10);
 						
-						sendMessage = gson.toJson(msg).getBytes();
-						DatagramPacket sendPacket = new DatagramPacket(
-								sendMessage, sendMessage.length,
-								inetAddress, i.getPort());
-						
-						sincronizeSendSocket.send(sendPacket);
+						ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+						myBuffer.put(gson.toJson(msg).getBytes());
+						myBuffer.flip();
+							
+						InetAddress hostIP = InetAddress.getLocalHost();
+							
+						InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
+							
+						SocketChannel myClient = SocketChannel.open(myAddress);
+							
+						myClient.write(myBuffer);
+							
+						myClient.close();
 							
 					}catch(IOException e) 
 					{
@@ -233,13 +238,9 @@ public class LoadBalance
 			}
 			
 			//redirectReciveSocket.close();
-			sincronizeSendSocket.close();
-		}catch(IOException e) 
-		{
-			System.out.println("Failed to connect");
-		}
+			//sincronizeSendSocket.close();
 	}
-	*/
+	
 	private static void redirectCliente(String message, SocketChannel myClient) 
 	{
 		System.out.println("Mensagem recebida do cliente: " + message);
@@ -371,6 +372,154 @@ public class LoadBalance
 			//redirectSendSocket.close();
 	}
 	
+	private static void redirectAnime(String message, SocketChannel myClient) 
+	{
+		System.out.println("Mensagem recebida do cliente: " + message);
+			//DatagramSocket redirectSendSocket = new DatagramSocket();
+			//DatagramSocket redirectReciveSocket = new DatagramSocket();
+			//redirectReciveSocket.setSoTimeout(4000);
+			//InetAddress inetAddress = InetAddress.getByName("localhost");
+			//byte[] sendMessage;
+			
+			boolean flag = false;
+			
+			portsAnimes.sort((LoadAux rhs, LoadAux lhs) ->
+			{
+				if(rhs.getLoad() < lhs.getLoad()) 
+				{
+					return -1;
+				}else if(rhs.getLoad() == lhs.getLoad()) 
+				{
+					return 0;
+				}
+				
+				return 1;
+			}
+					);
+			
+			for (LoadAux i : portsAnimes) 
+			{
+				try {
+					//System.out.println("Porta do cliente: " + clientPort);
+					// Sending packet
+					//sendMessage = message.getBytes();
+					//DatagramPacket sendPacket = new DatagramPacket(
+					//		sendMessage, sendMessage.length,
+					//		inetAddress, i.getPort());
+					
+					i.setLoad(i.getLoad() + 1);
+					
+					System.out.println("Estou tentando enviar a mensagem para o servidor");
+					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+					myBuffer.put(message.getBytes());
+					myBuffer.flip();
+					
+					
+					InetAddress hostIP = InetAddress.getLocalHost();
+					
+					InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
+					
+					
+					SocketChannel myClient2 = SocketChannel.open(myAddress);
+					
+					myClient2.write(myBuffer);
+					System.out.println("Enviei a mensagem para o servidor");
+					
+					ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
+					System.out.println("Estou tentando receber o feedback do servidor");
+					myClient2.read(myBuffer2);
+					
+					String data = new String(myBuffer2.array()).trim();
+					System.out.println("Recebi o feedback do servidor");
+					//redirectSendSocket.send(sendPacket);
+					
+					//Waiting for response
+					//byte[] receiveMessage = new byte[1024];
+					//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+					//redirectSendSocket.setSoTimeout(4000);
+					//redirectSendSocket.receive(receivePacket);
+					
+					//String returnMessage = new String(receivePacket.getData());
+					
+					//System.out.println("Mensagem de feedback recebida: " + returnMessage);
+					
+					// JSON Update
+					Gson gson = new Gson();
+					JsonReader reader = new JsonReader(new StringReader(data));
+					reader.setLenient(true);
+					Message msg = gson.fromJson(reader, Message.class);
+					
+					//System.out.println("Mensagem que chegou ao loadBalance: " + message);
+					System.out.println("Mensagem de feedback do ClientServer: " + data);
+					
+					if(msg != null) 
+					{
+						switch(msg.getType()) 
+						{
+						case 11:
+							String resposta = autorizeToken(data);
+							if(resposta != null) 
+							{
+								ByteBuffer bufferResposta = ByteBuffer.allocate(BUFFER_SIZE);
+								bufferResposta.put(resposta.getBytes());
+								bufferResposta.flip();
+								
+								System.out.println("Buffer da resposta do cliente para o anime: " + resposta);
+								
+								try {
+									myClient2.write(bufferResposta);
+								}catch(IOException k) 
+								{
+									k.printStackTrace();
+									System.out.println("Deu ruim no write do feedback");
+								}
+								
+								
+								System.out.println("Enviei a mensagem para o anime");
+								
+								ByteBuffer bufferFeedback = ByteBuffer.allocate(BUFFER_SIZE);
+								myClient2.read(bufferFeedback);
+								String response = new String(bufferFeedback.array()).trim();
+								
+								JsonReader sincReader = new JsonReader(new StringReader(response));
+								sincReader.setLenient(true);
+								Message sincAnimeMsg = gson.fromJson(sincReader, Message.class);
+								
+								if(sincAnimeMsg.getType() == 7) 
+								{
+									sincronizeAnime(response, i.getPort());
+									System.out.println("Cadastro realizado com sucesso");
+									flag = true;
+								}else if(sincAnimeMsg.getType() == 13)
+								{
+									System.out.println("O usuário não está logado");
+									flag = true;
+								}
+								break;
+								//System.out.println("Recebi o feedback do servidor");
+							}
+						}
+					}	
+				
+				myClient2.close();
+				// i.setLoad(i.getLoad() - 1);
+					
+				if(flag) 
+				{
+					System.out.println("Breaking the balance loop in RedirectClient");
+					break;
+				}
+				}catch(IOException e2) 
+				{
+					System.out.println("Trying another server...");
+					continue;
+				}
+			}
+			
+			//redirectReciveSocket.close();
+			//redirectSendSocket.close();
+	}
+	
 	/*
 	private static void redirectAnime(String message) 
 	{
@@ -475,7 +624,8 @@ public class LoadBalance
 		}
 	}
 	*/
-	private void autorizeToken(DatagramPacket message) 
+	
+	private static String autorizeToken(String data) 
 	{
 		portsClientes.sort((LoadAux rhs, LoadAux lhs) ->
 		{
@@ -491,48 +641,71 @@ public class LoadBalance
 		}
 				);
 		
-		String temp = new String(message.getData());
+		//String temp = new String(message.getData());
 		
 		for (LoadAux e : portsClientes) 
 		{
 			try {
-				DatagramSocket redirectSendSocket = new DatagramSocket();
-				InetAddress inetAddress = InetAddress.getByName("localhost");
-				byte[] sendMessage;
+				//DatagramSocket redirectSendSocket = new DatagramSocket();
+				//InetAddress inetAddress = InetAddress.getByName("localhost");
+				//byte[] sendMessage;
 				
-				sendMessage = temp.getBytes();
+				//sendMessage = temp.getBytes();
 				
-				DatagramPacket sendPacket = new DatagramPacket(
-						sendMessage, sendMessage.length,
-						inetAddress, e.getPort());
+				//DatagramPacket sendPacket = new DatagramPacket(
+				//		sendMessage, sendMessage.length,
+				//		inetAddress, e.getPort());
 				
-				redirectSendSocket.send(sendPacket);
+				//redirectSendSocket.send(sendPacket);
 				
-				redirectSendSocket.setSoTimeout(2000);
+				//redirectSendSocket.setSoTimeout(2000);
 				
-				byte[] receiveMessage = new byte[1024];
-				DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+				//System.out.println("Estou tentando enviar a mensagem para o servidor");
+				ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+				myBuffer.put(data.getBytes());
+				myBuffer.flip();
 				
-				redirectSendSocket.receive(receivePacket);
 				
-				byte[] lastFeedback = new String(receivePacket.getData()).getBytes();
-				DatagramPacket lastPacket = new DatagramPacket(
-						lastFeedback, lastFeedback.length,
-						message.getAddress(), message.getPort());
+				InetAddress hostIP = InetAddress.getLocalHost();
 				
-				redirectSendSocket.send(lastPacket);
+				InetSocketAddress myAddress = new InetSocketAddress(hostIP, e.getPort());
 				
-				redirectSendSocket.close();
-				break;
-			}catch(SocketTimeoutException ex) 
-			{
-				continue;
+				
+				SocketChannel myClient2 = SocketChannel.open(myAddress);
+				
+				myClient2.write(myBuffer);
+				System.out.println("Enviei a mensagem para o servidor");
+				
+				//byte[] receiveMessage = new byte[1024];
+				//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+				
+				//redirectSendSocket.receive(receivePacket);
+				
+				ByteBuffer bufferAut = ByteBuffer.allocate(BUFFER_SIZE);
+				myClient2.read(bufferAut);
+				String retornoAut = new String(bufferAut.array()).trim();
+				
+				myClient2.close();
+				
+				return retornoAut;
+				
+				//byte[] lastFeedback = new String(receivePacket.getData()).getBytes();
+				//DatagramPacket lastPacket = new DatagramPacket(
+				//		lastFeedback, lastFeedback.length,
+				//		message.getAddress(), message.getPort());
+				
+				//redirectSendSocket.send(lastPacket);
+				
+				//redirectSendSocket.close();
 			}catch(IOException ex2) 
 			{
-				System.out.println("Falha na criação do socket");
+				System.out.println("Tentando outro servidor...");
+				continue;
 			}
 			
 		}
+		
+		return null;
 	}
 	
 	public static void main(String[] args) { 

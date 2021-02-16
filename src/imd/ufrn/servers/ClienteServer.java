@@ -87,9 +87,9 @@ public class ClienteServer
 				case 9:
 					sincronize(msg);
 					break;
-				//case 11:
-				//	verifyToken(msg, myClient);
-				//	break;
+				case 11:
+					verifyToken(msg, myClient);
+					break;
 			}
 		}
 		else 
@@ -139,7 +139,7 @@ public class ClienteServer
 		}
 	}
 	
-	private void verifyToken(Message msg, DatagramPacket receivePacket) 
+	private static void verifyToken(Message msg, SocketChannel myClient) 
 	{
 		System.out.println("Cheguei na verificação do servidor de usuário");
 		String dummy = msg.getContent();
@@ -152,8 +152,7 @@ public class ClienteServer
 		
 		if(validatedTokens!=null) 
 		{
-			try {
-				DatagramSocket feedbackSocket = new DatagramSocket();
+				//DatagramSocket feedbackSocket = new DatagramSocket();
 				boolean flag = false;
 				for (Integer e : validatedTokens) 
 				{
@@ -164,11 +163,18 @@ public class ClienteServer
 							Message feedback = new Message();
 							feedback.setType(12);
 							feedback.setContent(gson.toJson(1, int.class));
-							byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
-							DatagramPacket sendPacket = new DatagramPacket(
-									sendMessage, sendMessage.length,
-									receivePacket.getAddress(), receivePacket.getPort());
-							feedbackSocket.send(sendPacket);
+							
+							ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+							myBuffer.put(gson.toJson(feedback).getBytes());
+							myBuffer.flip();
+								
+							myClient.write(myBuffer);
+							
+							//byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+							//DatagramPacket sendPacket = new DatagramPacket(
+							//		sendMessage, sendMessage.length,
+							//		receivePacket.getAddress(), receivePacket.getPort());
+							//feedbackSocket.send(sendPacket);
 						}catch(IOException e1) 
 						{
 							System.out.println("Deu ruim");
@@ -181,22 +187,29 @@ public class ClienteServer
 					Message feedback = new Message();
 					feedback.setType(12);
 					feedback.setContent(gson.toJson(2, int.class));
-					byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
-					DatagramPacket sendPacket = new DatagramPacket(
-							sendMessage, sendMessage.length,
-							receivePacket.getAddress(), receivePacket.getPort());
+					
+					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+					myBuffer.put(gson.toJson(feedback).getBytes());
+					myBuffer.flip();
+						
 					try {
-						feedbackSocket.send(sendPacket);
+						myClient.write(myBuffer);
 					} catch (IOException e1) {
-						e1.printStackTrace();
+						System.out.println("Não consegui mandar a mensagem de feedback");
 					}
+					
+					//byte[] sendMessage = gson.toJson(feedback, Message.class).getBytes();
+					//DatagramPacket sendPacket = new DatagramPacket(
+					//		sendMessage, sendMessage.length,
+					//		receivePacket.getAddress(), receivePacket.getPort());
+					//try {
+					//	feedbackSocket.send(sendPacket);
+					//} catch (IOException e1) {
+					//	e1.printStackTrace();
+					//}
 				}
 				
-				feedbackSocket.close();
-			} catch (SocketException e2) {
-				e2.printStackTrace();
-			}
-			
+				//feedbackSocket.close();	
 		}
 	}
 	
