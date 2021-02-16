@@ -23,6 +23,7 @@ import com.google.gson.stream.JsonReader;
 
 import imd.ufrn.model.LoadAux;
 import imd.ufrn.model.Message;
+import imd.ufrn.model.MessageAnime;
 
 public class LoadBalance 
 {
@@ -381,143 +382,185 @@ public class LoadBalance
 			//InetAddress inetAddress = InetAddress.getByName("localhost");
 			//byte[] sendMessage;
 			
+		portsAnimes.sort((LoadAux rhs, LoadAux lhs) ->
+		{
+			if(rhs.getLoad() < lhs.getLoad()) 
+			{
+				return -1;
+			}else if(rhs.getLoad() == lhs.getLoad()) 
+			{
+				return 0;
+			}
+			
+			return 1;
+		}
+				);
+		
 			boolean flag = false;
 			
-			portsAnimes.sort((LoadAux rhs, LoadAux lhs) ->
-			{
-				if(rhs.getLoad() < lhs.getLoad()) 
-				{
-					return -1;
-				}else if(rhs.getLoad() == lhs.getLoad()) 
-				{
-					return 0;
-				}
-				
-				return 1;
-			}
-					);
+			Gson gson = new Gson();
+			JsonReader reader = new JsonReader(new StringReader(message));
+			reader.setLenient(true);
+			Message dummy = gson.fromJson(reader, Message.class);
+		
+			JsonReader dummyReader = new JsonReader(new StringReader(dummy.getContent()));
+			dummyReader.setLenient(true);
+			MessageAnime dummy2 = gson.fromJson(dummyReader, MessageAnime.class);
 			
-			for (LoadAux i : portsAnimes) 
+			int userToken = dummy2.getUserToken();
+			
+			System.out.println("Token recebido: " + userToken);
+			
+			Message identify = new Message();
+			identify.setType(11);
+			identify.setContent(gson.toJson(userToken, int.class));
+			
+			//ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+			//myBuffer.put(gson.toJson(identify, Message.class).getBytes());
+			//myBuffer.flip();
+			
+			//myClient.write(myBuffer);
+			
+			String resposta = autorizeToken(gson.toJson(identify, Message.class));
+			
+			System.out.println(resposta);
+			JsonReader leitor = new JsonReader(new StringReader(resposta));
+			leitor.setLenient(true);
+			
+			Message tokenFeedback = gson.fromJson(leitor, Message.class);
+			
+			if(tokenFeedback.getType() == 12) 
 			{
-				try {
-					//System.out.println("Porta do cliente: " + clientPort);
-					// Sending packet
-					//sendMessage = message.getBytes();
-					//DatagramPacket sendPacket = new DatagramPacket(
-					//		sendMessage, sendMessage.length,
-					//		inetAddress, i.getPort());
-					
-					i.setLoad(i.getLoad() + 1);
-					
-					System.out.println("Estou tentando enviar a mensagem para o servidor");
-					ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-					myBuffer.put(message.getBytes());
-					myBuffer.flip();
-					
-					
-					InetAddress hostIP = InetAddress.getLocalHost();
-					
-					InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
-					
-					
-					SocketChannel myClient2 = SocketChannel.open(myAddress);
-					
-					myClient2.write(myBuffer);
-					System.out.println("Enviei a mensagem para o servidor");
-					
-					ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
-					System.out.println("Estou tentando receber o feedback do servidor");
-					myClient2.read(myBuffer2);
-					
-					String data = new String(myBuffer2.array()).trim();
-					System.out.println("Recebi o feedback do servidor");
-					//redirectSendSocket.send(sendPacket);
-					
-					//Waiting for response
-					//byte[] receiveMessage = new byte[1024];
-					//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
-					//redirectSendSocket.setSoTimeout(4000);
-					//redirectSendSocket.receive(receivePacket);
-					
-					//String returnMessage = new String(receivePacket.getData());
-					
-					//System.out.println("Mensagem de feedback recebida: " + returnMessage);
-					
-					// JSON Update
-					Gson gson = new Gson();
-					JsonReader reader = new JsonReader(new StringReader(data));
-					reader.setLenient(true);
-					Message msg = gson.fromJson(reader, Message.class);
-					
-					//System.out.println("Mensagem que chegou ao loadBalance: " + message);
-					System.out.println("Mensagem de feedback do ClientServer: " + data);
-					
-					if(msg != null) 
+				int feedback = gson.fromJson(tokenFeedback.getContent(), int.class);
+				if(feedback == 1) 
+				{
+					for (LoadAux i : portsAnimes) 
 					{
-						switch(msg.getType()) 
-						{
-						case 11:
-							String resposta = autorizeToken(data);
-							if(resposta != null) 
+						try {
+							//System.out.println("Porta do cliente: " + clientPort);
+							// Sending packet
+							//sendMessage = message.getBytes();
+							//DatagramPacket sendPacket = new DatagramPacket(
+							//		sendMessage, sendMessage.length,
+							//		inetAddress, i.getPort());
+							
+							i.setLoad(i.getLoad() + 1);
+							
+							System.out.println("Estou tentando enviar a mensagem para o servidor");
+							ByteBuffer myBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+							myBuffer.put(message.getBytes());
+							myBuffer.flip();
+							
+							
+							InetAddress hostIP = InetAddress.getLocalHost();
+							
+							InetSocketAddress myAddress = new InetSocketAddress(hostIP, i.getPort());
+							
+							
+							SocketChannel myClient2 = SocketChannel.open(myAddress);
+							
+							myClient2.write(myBuffer);
+							System.out.println("Enviei a mensagem para o servidor");
+							
+							ByteBuffer myBuffer2 = ByteBuffer.allocate(BUFFER_SIZE);
+							System.out.println("Estou tentando receber o feedback do servidor");
+							myClient2.read(myBuffer2);
+							
+							String data = new String(myBuffer2.array()).trim();
+							System.out.println("Recebi o feedback do servidor");
+							//redirectSendSocket.send(sendPacket);
+							
+							//Waiting for response
+							//byte[] receiveMessage = new byte[1024];
+							//DatagramPacket receivePacket = new DatagramPacket(receiveMessage, receiveMessage.length);
+							//redirectSendSocket.setSoTimeout(4000);
+							//redirectSendSocket.receive(receivePacket);
+							
+							//String returnMessage = new String(receivePacket.getData());
+							
+							//System.out.println("Mensagem de feedback recebida: " + returnMessage);
+							
+							// JSON Update
+							//Gson gson = new Gson();
+							JsonReader reader2 = new JsonReader(new StringReader(data));
+							reader2.setLenient(true);
+							Message msg = gson.fromJson(reader2, Message.class);
+							
+							//System.out.println("Mensagem que chegou ao loadBalance: " + message);
+							System.out.println("Mensagem de feedback do ClientServer: " + data);
+							
+							if(msg != null) 
 							{
-								ByteBuffer bufferResposta = ByteBuffer.allocate(BUFFER_SIZE);
-								bufferResposta.put(resposta.getBytes());
-								bufferResposta.flip();
-								
-								System.out.println("Buffer da resposta do cliente para o anime: " + resposta);
-								
-								try {
-									myClient2.write(bufferResposta);
-								}catch(IOException k) 
+								switch(msg.getType()) 
 								{
-									k.printStackTrace();
-									System.out.println("Deu ruim no write do feedback");
-								}
-								
-								
-								System.out.println("Enviei a mensagem para o anime");
-								
-								ByteBuffer bufferFeedback = ByteBuffer.allocate(BUFFER_SIZE);
-								myClient2.read(bufferFeedback);
-								String response = new String(bufferFeedback.array()).trim();
-								
-								JsonReader sincReader = new JsonReader(new StringReader(response));
-								sincReader.setLenient(true);
-								Message sincAnimeMsg = gson.fromJson(sincReader, Message.class);
-								
-								if(sincAnimeMsg.getType() == 7) 
-								{
-									sincronizeAnime(response, i.getPort());
+								case 7:
+									sincronizeAnime(data, i.getPort());
 									System.out.println("Cadastro realizado com sucesso");
 									flag = true;
-								}else if(sincAnimeMsg.getType() == 13)
-								{
-									System.out.println("O usuário não está logado");
-									flag = true;
-								}
-								break;
-								//System.out.println("Recebi o feedback do servidor");
-							}
+									//if(resposta != null) 
+									//{
+									//	ByteBuffer bufferResposta = ByteBuffer.allocate(BUFFER_SIZE);
+									//	bufferResposta.put(resposta.getBytes());
+									//	bufferResposta.flip();
+										
+									//	System.out.println("Buffer da resposta do cliente para o anime: " + resposta);
+										
+									//	try {
+									//		myClient2.write(bufferResposta);
+									//	}catch(IOException k) 
+									//	{
+									//		k.printStackTrace();
+									//		System.out.println("Deu ruim no write do feedback");
+									//	}
+										
+										
+									//	System.out.println("Enviei a mensagem para o anime");
+										
+									//	ByteBuffer bufferFeedback = ByteBuffer.allocate(BUFFER_SIZE);
+									//	myClient2.read(bufferFeedback);
+									//	String response = new String(bufferFeedback.array()).trim();
+										
+									//	JsonReader sincReader = new JsonReader(new StringReader(response));
+									//	sincReader.setLenient(true);
+									//	Message sincAnimeMsg = gson.fromJson(sincReader, Message.class);
+										
+									//	if(sincAnimeMsg.getType() == 7) 
+									//	{
+											
+									//	}else if(sincAnimeMsg.getType() == 13)
+									//	{
+									//		System.out.println("O usuário não está logado");
+									//		flag = true;
+									//	}
+										break;
+										//System.out.println("Recebi o feedback do servidor");
+									}
+								}	
+						
+						myClient2.close();
+						// i.setLoad(i.getLoad() - 1);
+							
+						if(flag) 
+						{
+							System.out.println("Breaking the balance loop in RedirectClient");
+							break;
 						}
-					}	
-				
-				myClient2.close();
-				// i.setLoad(i.getLoad() - 1);
-					
-				if(flag) 
-				{
-					System.out.println("Breaking the balance loop in RedirectClient");
-					break;
+						}catch(IOException e2) 
+						{
+							System.out.println("Trying another server...");
+							continue;
+						}
+					}
 				}
-				}catch(IOException e2) 
+				else 
 				{
-					System.out.println("Trying another server...");
-					continue;
+					System.out.println("O usuário não está logado");
 				}
 			}
-			
-			//redirectReciveSocket.close();
-			//redirectSendSocket.close();
+			else 
+			{
+				System.out.println("Erro na verificação do token");
+			}
 	}
 	
 	/*

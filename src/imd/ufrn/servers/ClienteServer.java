@@ -150,6 +150,8 @@ public class ClienteServer
 		
 		int tokenVerify = gson.fromJson(reader, int.class);
 		
+		System.out.println("Token recebido: " + tokenVerify);
+		
 		if(validatedTokens!=null) 
 		{
 				//DatagramSocket feedbackSocket = new DatagramSocket();
