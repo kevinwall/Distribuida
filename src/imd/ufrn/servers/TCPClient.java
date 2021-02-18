@@ -23,7 +23,7 @@ import imd.ufrn.model.MessageLogin;
 import imd.ufrn.model.MessageScore;
 import imd.ufrn.model.MessageSyncClient;
 
-class UDPClient {
+class TCPClient {
 
 	private int token;
 	private ArrayList<Integer> lbs = new ArrayList<Integer>();
@@ -74,10 +74,10 @@ class UDPClient {
 				try {
 					myClient.read(bufferToken);
 					//bufferToken.flip();
-					System.out.println("BufferToken: " + bufferToken.toString());
+					//System.out.println("BufferToken: " + bufferToken.toString());
 					String data = new String(bufferToken.array()).trim();
 					
-					System.out.println("Mensagem recebida do LB: " + data);
+					//System.out.println("Mensagem recebida do LB: " + data);
 					
 					Message tokenMsg = gson.fromJson(data, Message.class);
 						
@@ -107,8 +107,8 @@ class UDPClient {
 		}
 	}
 	
-	public UDPClient() {
-		System.out.println("UDP Client Started");
+	public TCPClient() {
+		System.out.println("TCP Client Started");
 		lbs.add(9010);
 		lbs.add(9011);
 		Scanner scanner = new Scanner(System.in);
@@ -232,10 +232,10 @@ class UDPClient {
 		{
 			
 		}
-		System.out.println("UDP Client Terminating ");
+		System.out.println("TCP Client Terminating ");
 	}
 
 	public static void main(String args[]) {
-		new UDPClient();
+		new TCPClient();
 	}
 }
