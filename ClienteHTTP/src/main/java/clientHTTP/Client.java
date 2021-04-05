@@ -5,6 +5,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
 
+import model.MessageAnime;
 import model.MessageCadastro;
 import model.MessageLogin;
 
@@ -37,5 +38,17 @@ public class Client
 		
 		response = restTemplate.postForEntity(ROOT_URI + "9040/ClientService/Login", message, String.class);
 		System.out.println("Resposta do post2: " + response.getBody());
+		
+		MessageAnime msg3 = new MessageAnime();
+		msg3.setName("Mahouka");
+		msg3.setEpisodes(24);
+		msg3.setSummary("aaaaaaaaa");
+		msg3.setUserToken(Integer.parseInt(response.getBody()));
+		
+		message = gson.toJson(msg3);
+		
+		response = restTemplate.postForEntity(ROOT_URI + "9030/AnimeService/Register", message, String.class);
+		System.out.println("Resposta do post3: " + response.getBody());
+		
 	}
 }
