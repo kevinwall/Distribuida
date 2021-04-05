@@ -12,8 +12,10 @@ import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import com.teste2.Mal2.error.NotFoundAnimeException;
 import com.teste2.Mal2.model.Anime;
 import com.teste2.Mal2.model.MessageAnime;
+import com.teste2.Mal2.model.MessageScore;
 import com.teste2.Mal2.repository.AnimeRepository;
 
 @RestController
@@ -50,5 +52,38 @@ public class AnimeControl
 		}
 		
 		return "Erro ao cadastrar anime";
+	}
+	
+	@PostMapping("/Evaluate")
+	public String avaliarAnime(@RequestBody String message) 
+	{
+		Gson gson = new Gson();
+		JsonReader reader = new JsonReader(new StringReader(message));
+		reader.setLenient(true);
+		
+		MessageScore msg = gson.fromJson(reader, MessageScore.class);
+		
+		RestTemplate restTemplate = new RestTemplate();
+	
+		ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + "9040/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+		
+		if(response.getBody() == 1) 
+		{
+			try 
+			{
+				Anime a1 = animeRepository.findByName(msg.getName()).get();
+				
+				a1.addScore(msg.getScore());
+				
+				animeRepository.save(a1);
+				
+				return "Anime avaliado com sucesso";			
+			}catch(NotFoundAnimeException e) 
+			{
+				System.out.println("Anime não encontrado");
+			}
+		}
+		
+		return "Erro ao avaliar anime";
 	}
 }
