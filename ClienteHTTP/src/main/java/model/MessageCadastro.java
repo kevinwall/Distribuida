@@ -1,4 +1,4 @@
-package com.teste2.Mal2.model;
+package model;
 
 import java.io.Serializable;
 

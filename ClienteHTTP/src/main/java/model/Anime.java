@@ -1,31 +1,14 @@
-package com.teste2.Mal2.model;
+package model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-@Entity
-@Table(name="Animes")
 public class Anime implements Serializable
 {
-	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	private long id;
-	
 	private String name;
 	private int episodes;
 	private String summmary;
-	
-	@ElementCollection
-	private List<Double> scores;
-
+	private ArrayList<Double> scores;
 	private double mScore;
 	
 	public Anime() 
@@ -34,30 +17,6 @@ public class Anime implements Serializable
 		mScore=0;
 	}
 	
-	public long getId() {
-		return id;
-	}
-
-
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-
-
-	public double getmScore() {
-		return mScore;
-	}
-
-
-
-	public void setmScore(double mScore) {
-		this.mScore = mScore;
-	}
-
-
-
 	public void addScore(Double score) 
 	{
 		scores.add(score);
@@ -96,7 +55,7 @@ public class Anime implements Serializable
 	public void setMScore(double score) {
 		this.mScore = score;
 	}
-	public List<Double> getScores() {
+	public ArrayList<Double> getScores() {
 		return scores;
 	}
 	public void setScores(ArrayList<Double> scores) {
