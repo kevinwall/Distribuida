@@ -1,6 +1,7 @@
 package com.teste2.Mal2.control;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -36,20 +37,34 @@ public class AnimeControl
 		
 		MessageAnime msg = gson.fromJson(reader, MessageAnime.class);
 		
-		RestTemplate restTemplate = new RestTemplate();
-	
-		ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + "9040/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+		ArrayList<Integer> arr = new ArrayList<Integer>();
+		arr.add(9040);
+		arr.add(9041);
 		
-		if(response.getBody() == 1) 
+		for(Integer e : arr) 
 		{
-			Anime a1 = new Anime();
-			a1.setName(msg.getName());
-			a1.setEpisodes(msg.getEpisodes());
-			a1.setSummmary(msg.getSummary());
-			animeRepository.save(a1);
+			RestTemplate restTemplate = new RestTemplate();
 			
-			return "Anime cadastrado com sucesso";
+			try {
+				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + e +"/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+				
+				if(response.getBody() == 1) 
+				{
+					Anime a1 = new Anime();
+					a1.setName(msg.getName());
+					a1.setEpisodes(msg.getEpisodes());
+					a1.setSummmary(msg.getSummary());
+					animeRepository.save(a1);
+					
+					return "Anime cadastrado com sucesso";
+				}
+			}catch(Exception ex) 
+			{
+				System.out.println("Tentando outro servidor de autenticação...");
+				continue;
+			}
 		}
+		
 		
 		return "Erro ao cadastrar anime";
 	}
@@ -63,24 +78,38 @@ public class AnimeControl
 		
 		MessageScore msg = gson.fromJson(reader, MessageScore.class);
 		
-		RestTemplate restTemplate = new RestTemplate();
-	
-		ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + "9040/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+		ArrayList<Integer> arr = new ArrayList<Integer>();
+		arr.add(9040);
+		arr.add(9041);
 		
-		if(response.getBody() == 1) 
+		for(Integer e : arr) 
 		{
 			try 
 			{
-				Anime a1 = animeRepository.findByName(msg.getName()).get();
+				RestTemplate restTemplate = new RestTemplate();
 				
-				a1.addScore(msg.getScore());
+				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + e +"/ClientService/Verify/"+msg.getUserToken(), Integer.class);
 				
-				animeRepository.save(a1);
-				
-				return "Anime avaliado com sucesso";			
-			}catch(NotFoundAnimeException e) 
+				if(response.getBody() == 1) 
+				{
+					try 
+					{
+						Anime a1 = animeRepository.findByName(msg.getName()).get();
+						
+						a1.addScore(msg.getScore());
+						
+						animeRepository.save(a1);
+						
+						return "Anime avaliado com sucesso";			
+					}catch(NotFoundAnimeException ex) 
+					{
+						System.out.println("Anime não encontrado");
+					}
+				}
+			}catch(Exception ex2) 
 			{
-				System.out.println("Anime não encontrado");
+				System.out.println("Tentando outro servidor de autenticação...");
+				continue;
 			}
 		}
 		

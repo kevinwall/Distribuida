@@ -59,9 +59,6 @@ public class ClientControl
 		
 		MessageLogin msg = gson.fromJson(reader, MessageLogin.class);
 		
-		System.out.println("Usuário: " + msg.getUsuario() 
-		                   + "\nSenha: " + msg.getSenha());
-		
 		Cliente c1  = clienteRepository.findByUsername(msg.getUsuario()).get();
 		
 		if(c1.getPassword().equals(msg.getSenha())) 
