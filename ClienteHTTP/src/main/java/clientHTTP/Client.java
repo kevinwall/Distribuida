@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
 
+import model.Message;
 import model.MessageAnime;
 import model.MessageCadastro;
 import model.MessageLogin;
@@ -16,24 +17,28 @@ import model.MessageScore;
 public class Client 
 {
 	final static String ROOT_URI = "http://localhost:";
-	final static String CLIENT_URI = "/ClientService";
-	final static String ANIME_URI = "/AnimeService";
+	final static String LB_URI = "/LoadService";
 	
 	static int token;
 	
-	static ArrayList<Integer> portCliente = new ArrayList<Integer>();
-	static ArrayList<Integer> portAnime = new ArrayList<Integer>();
+	static ArrayList<Integer> portLB = new ArrayList<Integer>();
 	
 	private static void sendMessage(int type, String message) 
 	{
 		RestTemplate restTemplate = new RestTemplate();
+		Gson gson = new Gson();
+		
+		Message msg = new Message();
+		
+		msg.setType(type);
+		msg.setContent(message);
 		
 		if(type == 1) 
 		{
-			for(Integer e : portCliente) 
+			for(Integer e : portLB) 
 			{
 				try {
-					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + CLIENT_URI + "/Register", message, String.class);
+					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + LB_URI, msg, String.class);
 					
 					System.out.println("Resposta da requisição: " + response.getBody());
 					break;
@@ -46,10 +51,10 @@ public class Client
 		}
 		else if(type == 2) 
 		{
-			for(Integer e : portCliente) 
+			for(Integer e : portLB) 
 			{
 				try {
-					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + CLIENT_URI + "/Login", message, String.class);
+					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + LB_URI, msg, String.class);
 					
 					System.out.println("Resposta da requisição: " + response.getBody());
 					token = Integer.parseInt(response.getBody());
@@ -63,10 +68,10 @@ public class Client
 		}
 		else if(type == 3) 
 		{
-			for(Integer e : portAnime) 
+			for(Integer e : portLB) 
 			{
 				try {
-					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + ANIME_URI + "/Register", message, String.class);
+					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + LB_URI, msg, String.class);
 					
 					System.out.println("Resposta da requisição: " + response.getBody());
 					break;
@@ -79,10 +84,10 @@ public class Client
 		}
 		else if(type == 4) 
 		{
-			for(Integer e : portAnime) 
+			for(Integer e : portLB) 
 			{
 				try {
-					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + ANIME_URI + "/Evaluate", message, String.class);
+					ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e + LB_URI, msg, String.class);
 					
 					System.out.println("Resposta da requisição: " + response.getBody());
 					break;
@@ -98,10 +103,8 @@ public class Client
 	public static void main(String args[]) 
 	{
 	
-		portCliente.add(9040);
-		portCliente.add(9041);
-		portAnime.add(9030);
-		portAnime.add(9031);
+		portLB.add(9010);
+		portLB.add(9011);
 		
 		Scanner scanner = new Scanner(System.in);	
 		Gson gson = new Gson();
