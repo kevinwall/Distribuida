@@ -83,6 +83,7 @@ public class LoadControl
 			try 
 			{
 				ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e.getPort() +"/ClientService/Register", msg, String.class);
+				e.setLoad(e.getLoad());
 				System.out.println(response.getBody());
 				break;
 			}catch(Exception ex) 
@@ -121,6 +122,7 @@ public class LoadControl
 			try 
 			{
 				ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e.getPort() +"/ClientService/Login", msg, String.class);
+				e.setLoad(e.getLoad());
 				return response.getBody();
 			}catch(Exception ex) 
 			{
@@ -160,6 +162,7 @@ public class LoadControl
 			try 
 			{
 				ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e.getPort() +"/AnimeService/Register", msg, String.class);
+				e.setLoad(e.getLoad());
 				System.out.println(response.getBody());
 				break;
 			}catch(Exception ex) 
@@ -198,6 +201,7 @@ public class LoadControl
 			try 
 			{
 				ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + e.getPort() +"/AnimeService/Evaluate", msg, String.class);
+				e.setLoad(e.getLoad());
 				System.out.println(response.getBody());
 				break;
 			}catch(Exception ex) 
