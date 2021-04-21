@@ -7,17 +7,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.cloud.netflix.ribbon.RibbonClient;
 
-@FeignClient(name="AnimeService")
-@RibbonClient(name="AnimeService")
+//@FeignClient(name="animeservice")
+@FeignClient(name="netflix-zuul-api-gateway-server")
+@RibbonClient(name="animeservice")
 public interface RibbonAnimeServiceProxy 
 {
 	
-	@GetMapping("/verifyrange/{value}")
+	@GetMapping("/animeservice/verifyrange/{value}")
 	public Double verifyRange(@PathVariable Double value);
 	
-	@PostMapping("/AnimeService/Evaluate")
+	@PostMapping("/animeservice/AnimeService/Evaluate")
 	public String avaliarAnime(@RequestBody String message);
 	
-	@PostMapping("/AnimeService/Register")
+	@PostMapping("/animeservice/AnimeService/Register")
 	public String cadastroAnime(@RequestBody String message);
 }

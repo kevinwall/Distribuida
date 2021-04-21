@@ -50,7 +50,7 @@ public class Client
 					msg.setSenha(scanner.nextLine());
 					
 					try {
-						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8100 + "/ClientService/Register", msg, String.class);
+						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8765 + "/clienteservice/ClientService/Register", msg, String.class);
 							
 						System.out.println("Resposta da requisição: " + response.getBody());
 					}catch(Exception ex) 
@@ -68,7 +68,7 @@ public class Client
 					msg2.setSenha(scanner.nextLine());
 					
 					try {
-						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8100 + "/ClientService/Login", msg2, String.class);
+						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8765 + "/clienteservice/ClientService/Login", msg2, String.class);
 							
 						System.out.println("Resposta da requisição: " + response.getBody());
 						token = Integer.parseInt(response.getBody());
@@ -92,7 +92,7 @@ public class Client
 					msg3.setUserToken(token);
 					
 					try {
-						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8100 + "/AnimeService/Register", msg3, String.class);
+						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8765 + "/animeservice/AnimeService/Register", msg3, String.class);
 							
 						System.out.println("Resposta da requisição: " + response.getBody());
 					}catch(Exception ex) 
@@ -112,7 +112,7 @@ public class Client
 					msg4.setUserToken(token);
 					
 					try {
-						ResponseEntity<Double> notaR = restTemplate.getForEntity(ROOT_URI + 8100 + "/verifyrange/"+msg4.getScore(), Double.class);
+						ResponseEntity<Double> notaR = restTemplate.getForEntity(ROOT_URI + 8765 + "/animeservice/verifyrange/"+msg4.getScore(), Double.class);
 						
 						msg4.setScore(notaR.getBody());
 					}catch(Exception ex) 
@@ -121,7 +121,7 @@ public class Client
 					}
 					
 					try {
-						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8100 + "/AnimeService/Evaluate", msg4, String.class);
+						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8765 + "/animeservice/AnimeService/Evaluate", msg4, String.class);
 							
 						System.out.println("Resposta da requisição: " + response.getBody());
 					}catch(Exception ex) 
