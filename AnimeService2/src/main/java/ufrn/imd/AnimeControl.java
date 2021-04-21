@@ -58,7 +58,7 @@ public class AnimeControl
 				}
 			}catch(Exception ex) 
 			{
-				System.out.println("Falha no envio da mensagem");
+				System.out.println("Tentando outro servidor de autenticação...");
 			}
 		
 		
@@ -78,7 +78,6 @@ public class AnimeControl
 		arr.add(9040);
 		arr.add(9041);
 		
-
 			try 
 			{
 				RestTemplate restTemplate = new RestTemplate();

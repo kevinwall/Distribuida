@@ -15,6 +15,12 @@ public class RibbonServiceController {
 	@Autowired
 	private RibbonAnimeServiceProxy proxy2;
 
+	@GetMapping("/verifyrange/{value}")
+	public Double verifyRange(@PathVariable Double value) 
+	{
+		return proxy2.verifyRange(value);
+	}
+	
 	@PostMapping("/AnimeService/Register")
 	public String cadastroAnime(@RequestBody String message) 
 	{

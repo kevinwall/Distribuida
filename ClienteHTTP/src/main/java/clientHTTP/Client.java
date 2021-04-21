@@ -112,6 +112,15 @@ public class Client
 					msg4.setUserToken(token);
 					
 					try {
+						ResponseEntity<Double> notaR = restTemplate.getForEntity(ROOT_URI + 8100 + "/verifyrange/"+msg4.getScore(), Double.class);
+						
+						msg4.setScore(notaR.getBody());
+					}catch(Exception ex) 
+					{
+						System.out.println("Serverless falhou...");
+					}
+					
+					try {
 						ResponseEntity<String> response = restTemplate.postForEntity(ROOT_URI + 8100 + "/AnimeService/Evaluate", msg4, String.class);
 							
 						System.out.println("Resposta da requisição: " + response.getBody());
