@@ -8,6 +8,7 @@ public class VerifyRange implements Function<Double, Double>
 	@Override
 	public Double apply(Double t) 
 	{
+		System.out.println("Trabalho de corno");
 		if(t > 10) 
 		{
 			t = 10.0;
