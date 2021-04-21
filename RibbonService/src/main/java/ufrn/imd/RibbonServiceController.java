@@ -15,7 +15,7 @@ public class RibbonServiceController {
 	@Autowired
 	private RibbonAnimeServiceProxy proxy2;
 
-	@GetMapping("/verifyrange/{value}")
+	@GetMapping("/range/{value}")
 	public Double verifyRange(@PathVariable Double value) 
 	{
 		return proxy2.verifyRange(value);

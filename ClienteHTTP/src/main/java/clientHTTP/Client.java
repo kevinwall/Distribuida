@@ -112,7 +112,7 @@ public class Client
 					msg4.setUserToken(token);
 					
 					try {
-						ResponseEntity<Double> notaR = restTemplate.getForEntity(ROOT_URI + 8765 + "/animeservice/verifyrange/"+msg4.getScore(), Double.class);
+						ResponseEntity<Double> notaR = restTemplate.getForEntity(ROOT_URI + 8765 + "/animeservice/range/"+msg4.getScore(), Double.class);
 						
 						msg4.setScore(notaR.getBody());
 					}catch(Exception ex) 

@@ -13,7 +13,7 @@ import org.springframework.cloud.netflix.ribbon.RibbonClient;
 public interface RibbonAnimeServiceProxy 
 {
 	
-	@GetMapping("/animeservice/verifyrange/{value}")
+	@GetMapping("/animeservice/range/{value}")
 	public Double verifyRange(@PathVariable Double value);
 	
 	@PostMapping("/animeservice/AnimeService/Evaluate")
