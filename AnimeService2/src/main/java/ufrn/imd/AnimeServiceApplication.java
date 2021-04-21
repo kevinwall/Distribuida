@@ -15,11 +15,5 @@ public class AnimeServiceApplication {
 	{
 		SpringApplication.run(AnimeServiceApplication.class, args);
 	}
-	
-	@Bean
-	public Sampler defaultSampler() 
-	{
-		return Sampler.ALWAYS_SAMPLE;
-	}
 
 }

@@ -44,7 +44,7 @@ public class AnimeControl
 			RestTemplate restTemplate = new RestTemplate();
 			
 			try {
-				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + 8100 +"/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + 8765 +"/clienteservice/ClientService/Verify/"+msg.getUserToken(), Integer.class);
 				
 				if(response.getBody() == 1) 
 				{
@@ -83,7 +83,7 @@ public class AnimeControl
 			{
 				RestTemplate restTemplate = new RestTemplate();
 				
-				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + 8100 +"/ClientService/Verify/"+msg.getUserToken(), Integer.class);
+				ResponseEntity<Integer> response = restTemplate.getForEntity(ROOT_URI + 8765 +"/clienteservice/ClientService/Verify/"+msg.getUserToken(), Integer.class);
 				
 				if(response.getBody() == 1) 
 				{
